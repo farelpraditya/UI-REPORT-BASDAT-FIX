@@ -1,0 +1,2469 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e-Seleksi PTN - Portal Integrasi Seleksi Nasional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; background: #f1f5f9; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .tab-content { animation: sheetUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        /* Pastikan konten tab (termasuk tab-hasil) selalu mengikuti alur dokumen normal,
+           menempel tepat di bawah stepper, tidak overlay/absolute, dan benar-benar
+           tersembunyi (tidak bocor ke screen-login) saat class .hidden aktif. */
+        .tab-content { position: static; }
+        .tab-content.hidden { display: none !important; }
+        #screen-login ~ #screen-main.hidden,
+        #screen-main.hidden { display: none !important; }
+        @keyframes sheetUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        #side-drawer, #info-bottom-sheet { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideIn { from { transform: translateY(-100%) translateX(-50%); opacity: 0; } to { transform: translateY(0) translateX(-50%); opacity: 1; } }
+        .toast-animate { animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .admin-tab-content { animation: sheetUp 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        .stat-card { transition: all 0.2s ease; }
+        .stat-card:hover { transform: translateY(-2px); }
+        .bar-fill { transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        @media print {
+            body * { visibility: hidden; }
+            #area-cetak-kartu, #area-cetak-kartu * { visibility: visible; }
+            #area-cetak-kartu { position: absolute; left: 0; top: 0; width: 100%; border: none !important; box-shadow: none !important; padding: 0 !important; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-900 antialiased flex justify-center min-h-screen relative">
+
+<style>
+    /* Custom Styling: Sentuhan Biru & Elemen Menarik (Admin Look) */
+
+    /* Latar belakang utama agar lebih bernuansa biru lembut */
+    body {
+        background-color: #e0f2fe !important;
+    }
+
+    /* Latar belakang area konten (Screen Main) */
+    #screen-main {
+        background: linear-gradient(180deg, #eff6ff 0%, #f1f5f9 100%) !important;
+    }
+
+    /* Mengubah Header Siswa menjadi warna Biru Elegan layaknya Admin */
+    header {
+        background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%) !important;
+        border-bottom: none !important;
+        box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3) !important;
+    }
+
+    /* Menyesuaikan warna teks pada Header agar putih/cerah */
+    header h1,
+    header p.text-blue-600 {
+        color: #ffffff !important;
+    }
+    header p.text-blue-600 {
+        opacity: 0.9;
+        text-shadow: 0px 1px 2px rgba(0,0,0,0.2);
+    }
+
+    /* Tombol drawer/menu di header menjadi transparan-putih */
+    header button {
+        background: rgba(255, 255, 255, 0.15) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    }
+    header button:hover {
+        background: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    /* Membuat Card atau Box terlihat lebih menonjol (Attractive shadow & border blue) */
+    .tab-content > div.bg-white {
+        border-left: 4px solid #3b82f6 !important;
+        border-top: 1px solid #bfdbfe !important;
+        border-right: 1px solid #bfdbfe !important;
+        border-bottom: 1px solid #bfdbfe !important;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.08), 0 4px 6px -2px rgba(37, 99, 235, 0.04) !important;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* Efek hover atau interaktif pada card */
+    .tab-content > div.bg-white:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.12), 0 10px 10px -5px rgba(37, 99, 235, 0.04) !important;
+    }
+
+    /* Navigasi bawah agar lebih menyala (glowing) saat aktif */
+    .nav-item.text-blue-600 i {
+        filter: drop-shadow(0px 0px 6px rgba(37, 99, 235, 0.6));
+        transform: scale(1.15);
+        transition: all 0.3s ease;
+    }
+
+    /* Mempercantik progress bar / kuota bar dengan efek cahaya */
+    .bg-emerald-500, .bg-amber-500 {
+        box-shadow: inset 0px 2px 4px rgba(255,255,255,0.4);
+    }
+</style>
+
+<!-- TOAST -->
+<div id="toast-container" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xs bg-slate-900 text-white text-xs font-semibold py-3 px-4 rounded-xl shadow-xl flex items-center space-x-2.5 toast-animate no-print">
+    <i id="toast-icon" class="fa-solid fa-circle-info text-blue-400"></i>
+    <span id="toast-message">Notifikasi sistem.</span>
+</div>
+
+<div class="w-full max-w-md bg-white border-x border-slate-200/50 min-h-screen flex flex-col relative overflow-x-hidden shadow-[0_0_50px_rgba(15,23,42,0.04)]">
+
+    <!-- ========================== SCREEN: LOGIN ========================== -->
+    <div id="screen-login" class="flex-1 flex flex-col justify-between p-8 bg-gradient-to-b from-blue-50/40 via-white to-white">
+        <div class="space-y-3 pt-16 text-center">
+            <div class="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg shadow-blue-600/20 mb-6 text-white rotate-6 hover:rotate-0 transition-transform duration-300">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight text-slate-950">e-Seleksi <span class="text-blue-600 font-semibold">PTN</span></h1>
+            <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed font-medium">Sistem Sinkronisasi Berkas & Validasi Kelayakan Basis Data Oracle</p>
+        </div>
+        <div class="space-y-5 mb-6">
+            <div class="p-4 rounded-xl bg-slate-50/80 border border-slate-200/60 space-y-2.5 shadow-xs">
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center">
+                    <i class="fa-solid fa-server mr-1.5 text-blue-600 animate-pulse"></i> Kredensial Demo:
+                </div>
+                <div class="text-xs space-y-1.5 font-medium text-slate-600">
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100">
+                        <span>1. <b>Rafi</b> (NISN: 12346 / Pass: 12346)</span>
+                        <span class="text-[9px] text-blue-600 bg-blue-50 font-bold uppercase px-1.5 py-0.5 rounded">SNBP</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100">
+                        <span>2. <b>Pascal</b> (NISN: 12345 / Pass: 12345)</span>
+                        <span class="text-[9px] text-amber-600 bg-amber-50 font-bold uppercase px-1.5 py-0.5 rounded">SNBT</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-red-100">
+                        <span>3. <b>Admin</b> (ID: admin / Pass: admin123)</span>
+                        <span class="text-[9px] text-red-600 bg-red-50 font-bold uppercase px-1.5 py-0.5 rounded">ADMIN</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-indigo-100">
+                        <span>4. <b>Andi</b> (NISN: 2023000001 / Pass: 2023000001)</span>
+                        <span class="text-[9px] text-indigo-600 bg-indigo-50 font-bold uppercase px-1.5 py-0.5 rounded">SNBP→SNBT</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-indigo-100">
+                        <span>5. <b>Citra</b> (NISN: 2023000003 / Pass: 2023000003)</span>
+                        <span class="text-[9px] text-indigo-600 bg-indigo-50 font-bold uppercase px-1.5 py-0.5 rounded">SNBP→SNBT</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-indigo-100">
+                        <span>6. <b>Eko</b> (NISN: 2023000005 / Pass: 2023000005)</span>
+                        <span class="text-[9px] text-indigo-600 bg-indigo-50 font-bold uppercase px-1.5 py-0.5 rounded">SNBP→SNBT</span>
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-1.5">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">NISN / ID Admin</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><i class="fa-solid fa-fingerprint text-sm"></i></span>
+                    <input id="login-nisn" type="text" placeholder="Masukkan NISN atau ID Admin" class="w-full bg-white border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-xs font-semibold text-slate-800 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                </div>
+            </div>
+            <div class="space-y-1.5">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><i class="fa-solid fa-key text-sm"></i></span>
+                    <input id="login-pass" type="password" placeholder="Password" class="w-full bg-white border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-xs font-semibold text-slate-800 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                </div>
+            </div>
+            <button onclick="handleLogin()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3.5 rounded-xl text-xs transition-all flex items-center justify-center space-x-2 shadow-md shadow-blue-600/10 active:scale-[0.99]">
+                <span>Masuk Aplikasi</span> <i class="fa-solid fa-arrow-right-to-bracket text-[11px] opacity-80"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================== SCREEN: SISWA MAIN ========================== -->
+    <div id="screen-main" class="hidden flex-1 flex flex-col h-full pb-24 bg-slate-50/50">
+        <header class="bg-white/90 backdrop-blur-md border-b border-slate-100 px-6 py-4 sticky top-0 z-40 flex justify-between items-center shadow-xs">
+            <div class="space-y-0.5">
+                <p class="text-[9px] text-blue-600 font-extrabold uppercase tracking-widest">Siswa Terotentikasi</p>
+                <h1 id="user-display-name" class="text-sm font-bold text-slate-900 tracking-tight">Nama Instansi</h1>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleDrawer(true)" class="w-9 h-9 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/60 rounded-xl flex items-center justify-center transition-all active:scale-95">
+                    <i class="fa-solid fa-bars-staggered text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="bg-white px-6 py-3 border-b border-slate-100 flex justify-between items-center text-[10px] font-bold text-slate-400 no-print">
+            <div id="step-profil" class="flex items-center space-x-1.5 text-blue-600">
+                <span class="w-4 h-4 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[9px]">1</span><span>Profil</span>
+            </div>
+            <div class="h-px bg-slate-200 flex-1 mx-2"></div>
+            <div id="step-prodi" class="flex items-center space-x-1.5">
+                <span class="w-4 h-4 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-[9px]">2</span><span>Pilihan</span>
+            </div>
+            <div class="h-px bg-slate-200 flex-1 mx-2"></div>
+            <div id="step-utbk" class="flex items-center space-x-1.5">
+                <span class="w-4 h-4 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-[9px]">3</span><span>UTBK</span>
+            </div>
+            <div class="h-px bg-slate-200 flex-1 mx-2"></div>
+            <div id="step-hasil" class="flex items-center space-x-1.5">
+                <span class="w-4 h-4 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-[9px]">4</span><span>Hasil</span>
+            </div>
+        </div>
+
+        <main class="flex-1 px-5 pt-4 space-y-5 overflow-y-auto no-scrollbar">
+            <!-- TAB 1: PROFIL -->
+            <div id="tab-profil" class="tab-content space-y-4">
+                <div class="bg-white border border-slate-200/60 p-4 rounded-2xl flex items-center justify-between shadow-xs">
+                    <div class="space-y-1 max-w-[65%]">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-blue-600 flex items-center"><i class="fa-solid fa-certificate mr-1.5"></i> Evaluasi Kelayakan</div>
+                        <h4 class="text-xs font-bold text-slate-800">Agregat Nilai Rapor</h4>
+                        <p class="text-[11px] text-slate-400 font-medium leading-relaxed">Nilai gabungan transkrip semester 1-5 terdata sah di pusdatin.</p>
+                    </div>
+                    <div class="relative w-16 h-16 flex items-center justify-center">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <path class="text-slate-100" stroke-width="3" stroke="currentColor" fill="transparent" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path id="progress-ring-rapor" class="text-blue-600" stroke-dasharray="0, 100" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="transparent" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div id="lbl-nilai-rapor" class="absolute text-xs font-extrabold text-slate-800">--</div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200/50 p-5 rounded-2xl shadow-xs space-y-4">
+                    <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center border-b border-slate-50 pb-2.5"><i class="fa-solid fa-user-gear mr-1.5 text-blue-600 text-xs"></i> Entitas Data Siswa (Table: Siswa)</div>
+                    <div class="grid grid-cols-2 gap-4 text-xs font-medium">
+                        <div><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">NISN (PK)</span><strong id="profil-nisn" class="text-slate-800 font-bold">--</strong></div>
+                        <div><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">Nama Siswa</span><strong id="profil-nama" class="text-slate-800 font-bold">--</strong></div>
+                        <div><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">Jenis Kelamin</span><strong id="profil-jk" class="text-slate-800 font-bold">--</strong></div>
+                        <div><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">Tanggal Lahir</span><strong id="profil-tgllahir" class="text-slate-800 font-bold">--</strong></div>
+                        <div class="col-span-2"><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">Alamat Siswa</span><strong id="profil-alamat-siswa" class="text-slate-800 font-medium leading-relaxed">--</strong></div>
+                        <div><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">Email</span><strong id="profil-email" class="text-slate-800 font-bold text-[11px] break-all">--</strong></div>
+                        <div><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">No Telepon</span><strong id="profil-telp-siswa" class="text-slate-800 font-bold">--</strong></div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200/50 p-5 rounded-2xl shadow-xs space-y-4">
+                    <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center border-b border-slate-50 pb-2.5"><i class="fa-solid fa-building-columns mr-1.5 text-blue-600 text-xs"></i> Entitas Lembaga (Table: Sekolah)</div>
+                    <div class="grid grid-cols-2 gap-4 text-xs font-medium">
+                        <div><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">NPSN (FK)</span><strong id="profil-npsn" class="text-slate-800 font-bold">--</strong></div>
+                        <div><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">Nama Sekolah</span><strong id="profil-nama-sekolah" class="text-slate-800 font-bold">--</strong></div>
+                        <div><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">Akreditasi</span><strong id="profil-akreditasi" class="text-slate-800 font-bold">--</strong></div>
+                        <div><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">Status Kelayakan</span><strong id="card-kelayakan" class="inline-block mt-0.5">--</strong></div>
+                        <div class="col-span-2"><span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">Alamat Sekolah</span><strong id="profil-alamat-sekolah" class="text-slate-800 font-medium leading-relaxed">--</strong></div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200/50 p-5 rounded-2xl shadow-xs space-y-3">
+                    <button onclick="toggleDrawer(true)" class="w-full text-center text-blue-600 bg-blue-50/70 hover:bg-blue-100 border border-blue-100/50 text-[11px] font-bold py-2.5 rounded-xl transition-colors">
+                        <i class="fa-solid fa-magnifying-glass-chart mr-1"></i> Lihat Komponen Nilai Rapor (Table: Nilai_Raport)
+                    </button>
+                </div>
+                <button onclick="switchTab('prodi')" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-3.5 rounded-xl flex items-center justify-center space-x-1 shadow-md transition-all active:scale-[0.99]">
+                    <span>Lanjut Ke Pilihan Prodi</span> <i class="fa-solid fa-arrow-right text-[10px] opacity-70 ml-1"></i>
+                </button>
+            </div>
+
+            <div id="tab-prodi" class="tab-content hidden space-y-4">
+                <div class="bg-white border border-slate-200/50 p-4 rounded-xl shadow-xs flex justify-between items-center text-xs">
+                    <span class="text-slate-500 font-medium">Jalur Aktif:</span>
+                    <span id="badge-jalur" class="text-slate-800 bg-slate-100 border border-slate-200 text-[10px] font-bold px-2.5 py-1 rounded-lg">--</span>
+                </div>
+                <div id="form-container-utama" class="bg-white border border-slate-200/50 p-5 rounded-2xl shadow-xs space-y-5">
+
+                    <div class="space-y-2.5">
+                        <label class="text-[11px] font-bold text-slate-800 flex items-center uppercase tracking-wide"><span class="w-5 h-5 rounded-lg bg-blue-600 text-white flex items-center justify-center text-[10px] mr-2 shadow-xs">1</span> Pilihan Prioritas 1</label>
+                        <select id="univ1" onchange="updateProdiOptions(1)" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-3.5 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all">
+                            <option value="">-- Pilih Universitas --</option>
+                        </select>
+                        <select id="prodi1" onchange="handleProdiSelection(1)" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-3.5 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all" disabled>
+                            <option value="">-- Pilih Program Studi Pilihan 1 --</option>
+                        </select>
+                        <div id="quota-wrapper-1" class="hidden bg-slate-50 p-2.5 rounded-xl border border-slate-150 space-y-1">
+                            <div class="flex justify-between text-[10px] font-bold">
+                                <span class="text-slate-400 uppercase">Tingkat Keketatan</span>
+                                <span id="quota-label-1" class="text-emerald-600">Aman</span>
+                            </div>
+                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                <div id="quota-bar-1" class="bg-emerald-500 h-full transition-all duration-500"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2.5 border-t border-slate-100 pt-4">
+                        <label class="text-[11px] font-bold text-slate-400 flex items-center uppercase tracking-wide"><span class="w-5 h-5 rounded-lg bg-slate-200 text-white flex items-center justify-center text-[10px] mr-2">2</span> Pilihan Prioritas 2</label>
+                        <select id="univ2" onchange="updateProdiOptions(2)" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-3.5 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all">
+                            <option value="">-- Pilih Universitas --</option>
+                        </select>
+                        <select id="prodi2" onchange="handleProdiSelection(2)" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-3.5 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all" disabled>
+                            <option value="">-- Pilih Program Studi Pilihan 2 --</option>
+                        </select>
+                        <div id="quota-wrapper-2" class="hidden bg-slate-50 p-2.5 rounded-xl border border-slate-150 space-y-1">
+                            <div class="flex justify-between text-[10px] font-bold">
+                                <span class="text-slate-400 uppercase">Tingkat Keketatan</span>
+                                <span id="quota-label-2" class="text-amber-500">Kompetitif</span>
+                            </div>
+                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                <div id="quota-bar-2" class="bg-amber-500 h-full transition-all duration-500"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="panel-simulasi-kontrol" class="bg-amber-50/60 border border-amber-200/60 p-4 rounded-xl text-xs space-y-2">
+                        <!-- Sub-panel A: Simulasi Kegagalan (khusus jalur SNBP, mis. Rafi) -->
+                        <div id="sub-panel-snbp-gagal" class="hidden space-y-2">
+                            <p class="font-bold text-amber-900 flex items-center" id="title-simulasi"><i class="fa-solid fa-sliders mr-2 text-amber-600"></i> Skenario Pengujian (<span id="skenario-label-nama">Siswa</span>):</p>
+                            <label class="flex items-start space-x-2.5 cursor-pointer">
+                                <input type="checkbox" id="chk-simulasi-gagal" class="w-4 h-4 text-amber-600 border-amber-300 rounded focus:ring-amber-500 mt-0.5">
+                                <span id="text-simulasi" class="text-[11px] font-medium leading-normal text-amber-800/80">Simulasikan kegagalan seleksi.</span>
+                            </label>
+                        </div>
+
+                        <!-- Sub-panel B: Skenario Tahun Pendaftaran (jalur SNBT — mis. Budi, Citra) -->
+                        <div id="sub-panel-tahun-pendaftaran" class="hidden space-y-2">
+                            <p class="font-bold text-amber-900 flex items-center">
+                                <i class="fa-solid fa-calendar-days mr-2 text-amber-600"></i> Skenario Tahun Pendaftaran (<span id="skenario-tahun-label-nama">Siswa</span>):
+                            </p>
+                            <p class="text-[11px] font-medium leading-normal text-amber-800/80">
+                                Pilih tahun keikutsertaan UTBK untuk mensinkronkan Nomor Registrasi dengan data historis Oracle.
+                            </p>
+                            <select id="select-tahun-utbk" class="w-full bg-white border border-amber-300 rounded-lg py-2 px-3 text-xs font-semibold text-amber-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-all">
+                                <option value="2024">2024</option>
+                                <option value="2023">2023</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="btn-submit-registrasi" onclick="openModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-xs shadow-md shadow-blue-600/10 transition-all active:scale-[0.99]">
+                        Ajukan Verifikasi & Kunci Pilihan
+                    </button>
+                </div>
+
+                <div id="wrapper-cetak-dokumen" class="hidden space-y-4">
+                    <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-medium flex items-center space-x-2 shadow-xs">
+                        <i class="fa-solid fa-circle-check text-base text-emerald-600"></i>
+                        <span><b>Berhasil Dikunci!</b> Kartu pendaftaran siap dicetak.</span>
+                    </div>
+                    <div id="area-cetak-kartu" class="bg-white border-2 border-slate-900 rounded-2xl p-5 shadow-lg space-y-4 text-slate-900">
+                        <div class="flex items-center justify-between border-b-2 border-slate-900 pb-3">
+                            <div class="space-y-0.5">
+                                <h4 id="print-header-title" class="text-xs font-black tracking-tight uppercase">KARTU PESERTA SELEKSI</h4>
+                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">E-SELEKSI PTN OFFICIAL RECORD 2026</p>
+                            </div>
+                            <i class="fa-solid fa-print text-xl text-slate-800"></i>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-200/60 p-3 rounded-xl text-[10px] grid grid-cols-2 gap-2.5 font-medium mb-2">
+                            <div class="col-span-2 text-[9px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center"><i class="fa-solid fa-database mr-1.5 text-blue-600"></i> Data Pendaftaran</div>
+                            <div><span class="text-slate-400 block text-[8px] uppercase">No. Pendaftaran</span><strong id="print-no-pendaftaran" class="text-slate-900 font-bold">--</strong></div>
+                            <div><span class="text-slate-400 block text-[8px] uppercase">Jalur Seleksi</span><strong id="print-jalur-seleksi" class="text-slate-900 font-bold text-blue-700">--</strong></div>
+                            <div><span class="text-slate-400 block text-[8px] uppercase">Tanggal Daftar</span><strong id="print-tanggal-daftar" class="text-slate-900 font-bold">--</strong></div>
+                            <div><span class="text-slate-400 block text-[8px] uppercase">Periode</span><strong id="print-periode-pendaftaran" class="text-slate-900 font-bold">2026/2027</strong></div>
+                        </div>
+                        <div class="flex space-x-4 border-t border-slate-100 pt-2">
+                            <div class="w-10 h-12 bg-slate-800 rounded-lg flex items-center justify-center text-lg font-black text-white flex-shrink-0" id="avatar-foto-cetak">-</div>
+                            <div class="text-[10px] space-y-0.5 min-w-0">
+                                <strong id="print-nama" class="text-slate-900 font-black block text-xs">--</strong>
+                                <span id="print-nisn" class="text-slate-400 block">NISN: --</span>
+                                <span id="print-npsn-card" class="text-slate-400 block">NPSN: --</span>
+                                <span id="print-sekolah-card" class="text-slate-700 font-semibold block truncate">--</span>
+                            </div>
+                        </div>
+                        <div class="border-t border-slate-200 pt-3 space-y-1.5 text-[10px] font-medium">
+                            <div class="flex items-start space-x-2"><span class="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center text-[8px] flex-shrink-0 mt-0.5">1</span><span id="print-prodi1" class="text-slate-800">--</span></div>
+                            <div class="flex items-start space-x-2"><span class="w-4 h-4 rounded bg-slate-300 text-white flex items-center justify-center text-[8px] flex-shrink-0 mt-0.5">2</span><span id="print-prodi2" class="text-slate-500">--</span></div>
+                        </div>
+                        <div id="print-jadwal-section" class="hidden border-t border-slate-200 pt-3 text-[10px] space-y-1 font-medium">
+                            <div class="font-bold text-slate-500 uppercase tracking-wider text-[9px] mb-1.5">Jadwal UTBK</div>
+                            <div class="flex justify-between"><span class="text-slate-400">Pusat UTBK</span><span id="print-pusat-utbk" class="text-slate-800 font-bold">--</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Tanggal</span><span class="text-slate-800 font-bold">22 Juni 2026</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Sesi</span><span class="text-slate-800 font-bold">Pagi (07:30 WIB)</span></div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="window.print()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 border border-slate-200 transition-colors">
+                            <i class="fa-solid fa-print"></i><span>Cetak</span>
+                        </button>
+                        <button id="btn-next-step" onclick="prosesKelulusanNasional()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-colors shadow-md">
+                            <span id="btn-next-text">Lanjut</span> <i id="btn-next-icon" class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: UTBK -->
+            <div id="tab-utbk" class="tab-content hidden space-y-4">
+                <div id="utbk-locked" class="bg-white border border-slate-200/50 p-12 rounded-2xl text-center space-y-3 shadow-xs">
+                    <div class="w-12 h-12 bg-slate-50 text-slate-400 border border-slate-200/60 rounded-xl flex items-center justify-center mx-auto text-lg"><i class="fa-solid fa-lock"></i></div>
+                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Akses Terkunci</h3>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">Selesaikan pendaftaran dan kunci pilihan prodi terlebih dahulu.</p>
+                </div>
+                <div id="utbk-ready" class="hidden space-y-4">
+                    <div class="bg-white border border-slate-200/50 p-5 rounded-2xl shadow-xs space-y-4">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center"><i class="fa-solid fa-laptop-code mr-1.5 text-blue-600"></i> Simulasi Ujian UTBK</div>
+                        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs space-y-1 font-medium">
+                            <div class="flex justify-between"><span class="text-slate-500">Pusat UTBK</span><span id="display-pusat-utbk-pretest" class="font-bold text-slate-800">Menyesuaikan Pilihan</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">Tanggal</span><span class="font-bold text-slate-800">22 Juni 2026</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">Sesi</span><span class="font-bold text-slate-800">Pagi (07:30 WIB)</span></div>
+                        </div>
+                        <button onclick="prosesUjianUtbk()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-xs shadow-md transition-all active:scale-[0.99]">
+                            Mulai Simulasi Ujian UTBK <i class="fa-solid fa-play ml-1.5 text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="utbk-finished" class="hidden space-y-4">
+                    <div class="bg-white border border-slate-200/50 p-5 rounded-2xl shadow-xs space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-2.5">
+            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider">
+                <i class="fa-solid fa-square-poll-vertical mr-1"></i> Skor UTBK
+            </span>
+                            <span id="display-id-skor" class="text-[10px] font-mono text-slate-400 font-bold">ID_Skor: --</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 text-xs font-medium">
+                            <div class="col-span-2 bg-gradient-to-b from-slate-50 to-white p-4 rounded-xl border border-slate-200/60 text-center">
+                                <span class="text-slate-400 block text-[9px] uppercase tracking-wide mb-0.5">Total Skor Nasional</span>
+                                <strong id="display-skor-utbk" class="text-3xl font-extrabold text-blue-600 tracking-tight">---</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[9px] uppercase mb-0.5">Pusat UTBK</span>
+                                <strong id="display-pusat-utbk" class="text-slate-800 font-bold">--</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[9px] uppercase mb-0.5">Tanggal</span>
+                                <strong id="display-tanggal-utbk" class="text-slate-800 font-bold">--</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button id="btn-lihat-hasil-utbk" onclick="prosesDanLihatHasil()" class="hidden w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 text-xs rounded-xl transition-all shadow-md active:scale-[0.99] flex items-center justify-center space-x-2">
+                    <span>Lihat Hasil Kelulusan Seleksi</span>
+                    <i class="fa-solid fa-arrow-right text-[10px] opacity-70"></i>
+                </button>
+            </div>
+
+            <!-- TAB 4: HASIL -->
+            <div id="tab-hasil" class="tab-content hidden space-y-4">
+                <div id="hasil-locked" class="bg-white border border-slate-200/50 p-12 rounded-2xl text-center space-y-3 shadow-xs">
+                    <div class="w-12 h-12 bg-slate-50 text-slate-400 border border-slate-200/60 rounded-xl flex items-center justify-center mx-auto text-lg"><i class="fa-solid fa-hourglass-half"></i></div>
+                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Hasil Belum Diproses</h3>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">Sistem belum menerima pengajuan kunci dari formulir pendaftaran.</p>
+                </div>
+                <div id="panel-deklarasi-hasil" class="hidden space-y-4">
+                    <div id="border-kondisi-kelulusan" class="bg-white border-2 rounded-2xl p-6 text-center space-y-5 shadow-xs relative overflow-hidden">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-3 text-left">
+                            <span class="text-[9px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded uppercase tracking-wider">Hasil Nasional</span>
+                            <div>
+                                <span id="final-id-hasil" class="text-[10px] font-mono font-bold text-slate-800 block text-right">ID_Hasil: --</span>
+                                <span id="final-tgl-pengumuman" class="text-[9px] font-medium text-slate-400 block text-right">Tanggal: --</span>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <div id="icon-status-hasil" class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto text-2xl border mb-3"></div>
+                            <h3 id="final-status-kelulusan" class="text-xl font-extrabold text-slate-900 tracking-tight">--</h3>
+                            <p id="final-deskripsi-status" class="text-[11px] text-slate-400 font-medium max-w-xs mx-auto leading-relaxed">--</p>
+                        </div>
+                        <div id="wrapper-atribut-penerima" class="bg-slate-50 border border-slate-200/60 p-4 rounded-xl text-left text-xs space-y-3 font-medium">
+                            <div><span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Diterima di Universitas</span><strong id="final-nama-ptn" class="text-slate-800 text-sm font-bold block mt-0.5">--</strong></div>
+                            <div class="border-t border-slate-200/40 pt-2.5"><span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Program Studi</span><strong id="final-nama-prodi" class="text-blue-600 text-sm font-bold block mt-0.5">--</strong></div>
+                        </div>
+                        <div id="box-skor-gagal-utbk" class="hidden bg-rose-50/70 border border-rose-200/60 p-4 rounded-xl text-left text-xs space-y-1">
+                            <span class="text-[9px] text-rose-500 font-bold uppercase tracking-wider block"><i class="fa-solid fa-square-poll-vertical mr-1"></i> Detail Skor UTBK</span>
+                            <p id="text-skor-gagal-utbk" class="text-rose-700 font-semibold text-[12px] leading-relaxed">Skor UTBK Anda: --</p>
+                        </div>
+                        <div id="box-snbp-ke-snbt" class="hidden bg-blue-50/70 border border-blue-200/60 p-4 rounded-xl text-left space-y-3">
+                            <p class="text-[11px] text-slate-600 font-medium leading-relaxed">Anda berhak melanjutkan ke jalur seleksi SNBT.</p>
+                            <button onclick="pindahKeJalurSnbt()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition-all">Alihkan ke Jalur SNBT <i class="fa-solid fa-arrow-right ml-1 text-[9px]"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- BOTTOM NAV -->
+        <div class="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-100 px-4 py-2 flex justify-around items-center z-40 no-print shadow-lg">
+            <button onclick="switchTab('profil')" id="btn-profil" class="nav-item flex flex-col items-center space-y-1 text-blue-600 w-16 transition-all">
+                <i class="fa-solid fa-address-card text-base"></i><span class="text-[9px] font-bold">1. Profil</span>
+            </button>
+            <button onclick="switchTab('prodi')" id="btn-prodi" class="nav-item flex flex-col items-center space-y-1 text-slate-400 w-16 transition-all">
+                <i class="fa-solid fa-file-signature text-base"></i><span class="text-[9px] font-medium">2. Daftar</span>
+            </button>
+            <button onclick="lanjutAlurSeleksi()" id="btn-utbk" class="nav-item flex flex-col items-center space-y-1 text-slate-400 w-16 transition-all">
+                <i class="fa-solid fa-laptop-code text-base"></i><span class="text-[9px] font-medium">3. UTBK</span>
+            </button>
+            <button onclick="switchTab('hasil')" id="btn-hasil" class="nav-item flex flex-col items-center space-y-1 text-slate-400 w-16 transition-all">
+                <i class="fa-solid fa-file-invoice text-base"></i><span class="text-[9px] font-medium">4. Hasil</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================== SCREEN: ADMIN PANEL ========================== -->
+    <div id="screen-admin" class="hidden flex-1 flex flex-col h-full bg-slate-50">
+        <!-- Admin Header -->
+        <header class="bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4 sticky top-0 z-40 flex justify-between items-center shadow-lg">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-red-500 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-md">
+                    <i class="fa-solid fa-user-shield text-sm"></i>
+                </div>
+                <div>
+                    <p class="text-[9px] text-red-400 font-extrabold uppercase tracking-widest">Administrator</p>
+                    <h1 class="text-sm font-bold text-white tracking-tight">Panel Kontrol Admin</h1>
+                </div>
+            </div>
+            <button onclick="logoutAdmin()" class="flex items-center space-x-1.5 text-slate-400 hover:text-white text-[11px] font-semibold transition-colors bg-slate-800/50 hover:bg-slate-700 px-3 py-2 rounded-lg">
+                <i class="fa-solid fa-power-off text-xs"></i><span>Keluar</span>
+            </button>
+        </header>
+
+        <!-- Admin Nav Tabs -->
+        <div class="bg-white border-b border-slate-200 px-4 pt-3 pb-0 sticky top-[64px] z-30 overflow-x-auto no-scrollbar">
+            <div class="flex space-x-1 min-w-max">
+                <button onclick="switchAdminTab('dashboard')" id="atab-dashboard" class="admin-nav-btn flex items-center space-x-1.5 px-3 py-2 text-[11px] font-bold border-b-2 border-blue-600 text-blue-600 whitespace-nowrap">
+                    <i class="fa-solid fa-chart-pie text-xs"></i><span>Dashboard</span>
+                </button>
+                <button onclick="switchAdminTab('siswa')" id="atab-siswa" class="admin-nav-btn flex items-center space-x-1.5 px-3 py-2 text-[11px] font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 whitespace-nowrap">
+                    <i class="fa-solid fa-users text-xs"></i><span>Data Siswa</span>
+                </button>
+                <button onclick="switchAdminTab('univ')" id="atab-univ" class="admin-nav-btn flex items-center space-x-1.5 px-3 py-2 text-[11px] font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 whitespace-nowrap">
+                    <i class="fa-solid fa-building-columns text-xs"></i><span>PTN & Prodi</span>
+                </button>
+                <button onclick="switchAdminTab('hasil')" id="atab-hasil" class="admin-nav-btn flex items-center space-x-1.5 px-3 py-2 text-[11px] font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 whitespace-nowrap">
+                    <i class="fa-solid fa-award text-xs"></i><span>Hasil Seleksi</span>
+                </button>
+                <button onclick="switchAdminTab('sekolah')" id="atab-sekolah" class="admin-nav-btn flex items-center space-x-1.5 px-3 py-2 text-[11px] font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 whitespace-nowrap">
+                    <i class="fa-solid fa-school text-xs"></i><span>Sekolah</span>
+                </button>
+                <button onclick="switchAdminTab('log')" id="atab-log" class="admin-nav-btn flex items-center space-x-1.5 px-3 py-2 text-[11px] font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 whitespace-nowrap">
+                    <i class="fa-solid fa-terminal text-xs"></i><span>Log Sistem</span>
+                </button>
+            </div>
+        </div>
+
+        <main class="flex-1 overflow-y-auto no-scrollbar pb-6">
+
+            <!-- ADMIN TAB: DASHBOARD -->
+            <div id="admin-tab-dashboard" class="admin-tab-content p-4 space-y-4">
+                <!-- Welcome Banner -->
+                <div class="bg-gradient-to-r from-slate-900 to-blue-900 rounded-2xl p-5 text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-8 translate-x-8"></div>
+                    <div class="absolute bottom-0 right-8 w-16 h-16 bg-white/5 rounded-full translate-y-4"></div>
+                    <div class="relative z-10">
+                        <p class="text-[10px] font-bold text-blue-300 uppercase tracking-widest mb-1">Sistem e-Seleksi PTN 2026</p>
+                        <h2 class="text-lg font-extrabold mb-1">Selamat Datang, Admin!</h2>
+                        <p class="text-xs text-slate-300 font-medium">Pantau seluruh aktivitas seleksi nasional dari panel ini.</p>
+                        <div class="mt-3 flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                            <span class="text-[11px] text-emerald-300 font-semibold">Sistem Aktif — Periode Seleksi 2026</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stat Cards Row 1 -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="stat-card bg-white border border-slate-200/60 p-4 rounded-2xl shadow-xs">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center"><i class="fa-solid fa-users text-blue-600 text-sm"></i></div>
+                            <span id="dash-badge-siswa" class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">&nbsp;</span>
+                        </div>
+                        <div id="dash-total-siswa" class="text-2xl font-extrabold text-slate-900">0</div>
+                        <div class="text-[10px] text-slate-400 font-medium mt-0.5">Total Siswa Terdaftar</div>
+                    </div>
+                    <div class="stat-card bg-white border border-slate-200/60 p-4 rounded-2xl shadow-xs">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center"><i class="fa-solid fa-award text-emerald-600 text-sm"></i></div>
+                            <span id="dash-badge-lolos" class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">0%</span>
+                        </div>
+                        <div id="dash-total-lolos" class="text-2xl font-extrabold text-slate-900">0</div>
+                        <div class="text-[10px] text-slate-400 font-medium mt-0.5">Dinyatakan Lulus</div>
+                    </div>
+                    <div class="stat-card bg-white border border-slate-200/60 p-4 rounded-2xl shadow-xs">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="w-8 h-8 bg-rose-50 rounded-xl flex items-center justify-center"><i class="fa-solid fa-xmark text-rose-600 text-sm"></i></div>
+                            <span id="dash-badge-gagal" class="text-[9px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-full">0%</span>
+                        </div>
+                        <div id="dash-total-gagal" class="text-2xl font-extrabold text-slate-900">0</div>
+                        <div class="text-[10px] text-slate-400 font-medium mt-0.5">Tidak Lulus</div>
+                    </div>
+                    <div class="stat-card bg-white border border-slate-200/60 p-4 rounded-2xl shadow-xs">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center"><i class="fa-solid fa-building-columns text-indigo-600 text-sm"></i></div>
+                            <span id="dash-badge-proses" class="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">0 proses</span>
+                        </div>
+                        <div id="dash-total-ptn" class="text-2xl font-extrabold text-slate-900">0</div>
+                        <div class="text-[10px] text-slate-400 font-medium mt-0.5">PTN Terdaftar</div>
+                    </div>
+                </div>
+
+                <!-- Jalur Seleksi Breakdown -->
+                <div class="bg-white border border-slate-200/60 p-5 rounded-2xl shadow-xs space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-extrabold text-slate-800 flex items-center"><i class="fa-solid fa-route mr-2 text-blue-600"></i>Distribusi Jalur Seleksi</h3>
+                        <span class="text-[10px] text-slate-400 font-medium">2026</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-[11px] font-semibold mb-1.5">
+                                <span class="text-slate-600 flex items-center"><span class="w-2 h-2 bg-blue-500 rounded-full mr-1.5"></span>SNBP (Prestasi)</span>
+                                <span id="dash-snbp-label" class="text-slate-800 font-bold">0 siswa (0%)</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div id="dash-snbp-bar" class="bg-blue-500 h-full rounded-full bar-fill" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[11px] font-semibold mb-1.5">
+                                <span class="text-slate-600 flex items-center"><span class="w-2 h-2 bg-amber-500 rounded-full mr-1.5"></span>SNBT (Tes Tulis)</span>
+                                <span id="dash-snbt-label" class="text-slate-800 font-bold">0 siswa (0%)</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div id="dash-snbt-bar" class="bg-amber-500 h-full rounded-full bar-fill" style="width:0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Peminat Per PTN -->
+                <div class="bg-white border border-slate-200/60 p-5 rounded-2xl shadow-xs space-y-4">
+                    <h3 class="text-xs font-extrabold text-slate-800 flex items-center"><i class="fa-solid fa-ranking-star mr-2 text-indigo-600"></i>Peminat Per PTN (Pilihan 1)</h3>
+                    <div id="dash-peminat-list" class="space-y-3"></div>
+                </div>
+
+                <!-- Rata-rata Nilai Rapor -->
+                <div class="bg-white border border-slate-200/60 p-5 rounded-2xl shadow-xs space-y-3">
+                    <h3 class="text-xs font-extrabold text-slate-800 flex items-center"><i class="fa-solid fa-chart-line mr-2 text-emerald-600"></i>Statistik Nilai Rapor</h3>
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div class="bg-blue-50 rounded-xl p-3">
+                            <div id="dash-rapor-avg" class="text-lg font-extrabold text-blue-700">0</div>
+                            <div class="text-[9px] text-slate-500 font-semibold uppercase">Rata-rata</div>
+                        </div>
+                        <div class="bg-emerald-50 rounded-xl p-3">
+                            <div id="dash-rapor-max" class="text-lg font-extrabold text-emerald-700">0</div>
+                            <div class="text-[9px] text-slate-500 font-semibold uppercase">Tertinggi</div>
+                        </div>
+                        <div class="bg-amber-50 rounded-xl p-3">
+                            <div id="dash-rapor-min" class="text-lg font-extrabold text-amber-700">0</div>
+                            <div class="text-[9px] text-slate-500 font-semibold uppercase">Terendah</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Action -->
+                <div class="bg-white border border-slate-200/60 p-5 rounded-2xl shadow-xs space-y-3">
+                    <h3 class="text-xs font-extrabold text-slate-800 flex items-center"><i class="fa-solid fa-bolt mr-2 text-amber-500"></i>Aksi Cepat Admin</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="switchAdminTab('siswa')" class="bg-blue-50 hover:bg-blue-100 border border-blue-100 text-blue-700 font-bold py-3 rounded-xl text-[11px] transition-colors flex flex-col items-center space-y-1">
+                            <i class="fa-solid fa-users text-base"></i><span>Lihat Semua Siswa</span>
+                        </button>
+                        <button onclick="switchAdminTab('hasil')" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 text-emerald-700 font-bold py-3 rounded-xl text-[11px] transition-colors flex flex-col items-center space-y-1">
+                            <i class="fa-solid fa-clipboard-check text-base"></i><span>Rekapitulasi Hasil</span>
+                        </button>
+                        <button onclick="switchAdminTab('univ')" class="bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 text-indigo-700 font-bold py-3 rounded-xl text-[11px] transition-colors flex flex-col items-center space-y-1">
+                            <i class="fa-solid fa-building-columns text-base"></i><span>Data PTN & Prodi</span>
+                        </button>
+                        <button onclick="switchAdminTab('sekolah')" class="bg-amber-50 hover:bg-amber-100 border border-amber-100 text-amber-700 font-bold py-3 rounded-xl text-[11px] transition-colors flex flex-col items-center space-y-1">
+                            <i class="fa-solid fa-school text-base"></i><span>Data Sekolah</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN TAB: DATA SISWA -->
+            <div id="admin-tab-siswa" class="admin-tab-content hidden p-4 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-extrabold text-slate-900 flex items-center"><i class="fa-solid fa-users mr-2 text-blue-600"></i>Data Seluruh Siswa</h2>
+                    <span id="siswa-count-badge" class="text-[10px] bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded-full">0 siswa</span>
+                </div>
+
+                <!-- Student Cards -->
+                <div id="admin-student-list" class="space-y-3"></div>
+
+                <!-- Detail Siswa Modal -->
+                <div id="admin-detail-siswa" class="hidden bg-white border border-slate-200/60 rounded-2xl shadow-xs overflow-hidden">
+                    <div class="bg-slate-900 p-4 flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-white flex items-center"><i class="fa-solid fa-id-card mr-2 text-blue-400"></i>Detail Lengkap Siswa</h3>
+                        <button onclick="document.getElementById('admin-detail-siswa').classList.add('hidden')" class="w-7 h-7 bg-slate-700 hover:bg-slate-600 rounded-lg flex items-center justify-center text-slate-300 text-xs transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        <!-- Biodata -->
+                        <div class="space-y-2">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Biodata Siswa</div>
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="bg-slate-50 p-2.5 rounded-xl"><span class="text-[9px] text-slate-400 uppercase block mb-0.5">NISN</span><strong id="d-nisn" class="text-slate-800">--</strong></div>
+                                <div class="bg-slate-50 p-2.5 rounded-xl"><span class="text-[9px] text-slate-400 uppercase block mb-0.5">Nama</span><strong id="d-nama" class="text-slate-800">--</strong></div>
+                                <div class="bg-slate-50 p-2.5 rounded-xl"><span class="text-[9px] text-slate-400 uppercase block mb-0.5">Jenis Kelamin</span><strong id="d-jk" class="text-slate-800">--</strong></div>
+                                <div class="bg-slate-50 p-2.5 rounded-xl"><span class="text-[9px] text-slate-400 uppercase block mb-0.5">Tanggal Lahir</span><strong id="d-tgl" class="text-slate-800">--</strong></div>
+                                <div class="col-span-2 bg-slate-50 p-2.5 rounded-xl"><span class="text-[9px] text-slate-400 uppercase block mb-0.5">Alamat</span><strong id="d-alamat" class="text-slate-800">--</strong></div>
+                                <div class="bg-slate-50 p-2.5 rounded-xl"><span class="text-[9px] text-slate-400 uppercase block mb-0.5">Email</span><strong id="d-email" class="text-slate-800 text-[10px] break-all">--</strong></div>
+                                <div class="bg-slate-50 p-2.5 rounded-xl"><span class="text-[9px] text-slate-400 uppercase block mb-0.5">No. HP</span><strong id="d-telp" class="text-slate-800">--</strong></div>
+                            </div>
+                        </div>
+                        <!-- Sekolah -->
+                        <div class="space-y-2">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center"><i class="fa-solid fa-school mr-1.5 text-blue-600"></i>Data Sekolah</div>
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="bg-blue-50 p-2.5 rounded-xl"><span class="text-[9px] text-blue-400 uppercase block mb-0.5">NPSN</span><strong id="d-npsn" class="text-blue-800">--</strong></div>
+                                <div class="bg-blue-50 p-2.5 rounded-xl"><span class="text-[9px] text-blue-400 uppercase block mb-0.5">Nama Sekolah</span><strong id="d-sekolah" class="text-blue-800">--</strong></div>
+                                <div class="bg-blue-50 p-2.5 rounded-xl"><span class="text-[9px] text-blue-400 uppercase block mb-0.5">Akreditasi</span><strong id="d-akreditasi" class="text-blue-800">--</strong></div>
+                                <div class="bg-blue-50 p-2.5 rounded-xl"><span class="text-[9px] text-blue-400 uppercase block mb-0.5">Jalur Seleksi</span><strong id="d-jalur" class="text-blue-800">--</strong></div>
+                            </div>
+                        </div>
+                        <!-- Nilai Rapor -->
+                        <div class="space-y-2">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center"><i class="fa-solid fa-table-list mr-1.5 text-emerald-600"></i>Nilai Rapor (Table: Nilai_Raport)</div>
+                            <div class="bg-white border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 text-xs shadow-xs">
+                                <div class="p-2.5 flex justify-between items-center"><span class="text-slate-500">Matematika</span><strong id="d-r1" class="text-slate-800">--</strong></div>
+                                <div class="p-2.5 flex justify-between items-center"><span class="text-slate-500">Bahasa Indonesia</span><strong id="d-r2" class="text-slate-800">--</strong></div>
+                                <div class="p-2.5 flex justify-between items-center"><span class="text-slate-500">Bahasa Inggris</span><strong id="d-r3" class="text-slate-800">--</strong></div>
+                                <div class="p-2.5 flex justify-between items-center"><span class="text-slate-500">Fisika / Ekonomi</span><strong id="d-r4" class="text-slate-800">--</strong></div>
+                                <div class="p-2.5 flex justify-between items-center"><span class="text-slate-500">Kimia / Sosiologi</span><strong id="d-r5" class="text-slate-800">--</strong></div>
+                                <div class="p-2.5 flex justify-between items-center bg-emerald-50"><span class="font-bold text-emerald-700">Rata-rata Gabungan</span><strong id="d-avg" class="text-emerald-700 text-sm">--</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN TAB: PTN & PRODI -->
+            <div id="admin-tab-univ" class="admin-tab-content hidden p-4 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-extrabold text-slate-900 flex items-center"><i class="fa-solid fa-building-columns mr-2 text-indigo-600"></i>Data PTN & Program Studi</h2>
+                    <span class="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-full">3 PTN</span>
+                </div>
+                <div id="admin-univ-list" class="space-y-4"></div>
+            </div>
+
+            <!-- ADMIN TAB: HASIL SELEKSI -->
+            <div id="admin-tab-hasil" class="admin-tab-content hidden p-4 space-y-4">
+                <h2 class="text-sm font-extrabold text-slate-900 flex items-center"><i class="fa-solid fa-award mr-2 text-emerald-600"></i>Rekapitulasi Hasil Seleksi</h2>
+
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-emerald-50 border border-emerald-200/60 p-3 rounded-2xl text-center">
+                        <div id="hasil-total-lolos" class="text-xl font-extrabold text-emerald-700">0</div>
+                        <div class="text-[9px] text-emerald-600 font-bold uppercase mt-0.5">Lulus</div>
+                    </div>
+                    <div class="bg-rose-50 border border-rose-200/60 p-3 rounded-2xl text-center">
+                        <div id="hasil-total-gagal" class="text-xl font-extrabold text-rose-700">0</div>
+                        <div class="text-[9px] text-rose-600 font-bold uppercase mt-0.5">Tidak Lulus</div>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200/60 p-3 rounded-2xl text-center">
+                        <div id="hasil-tingkat-lulus" class="text-xl font-extrabold text-blue-700">0%</div>
+                        <div class="text-[9px] text-blue-600 font-bold uppercase mt-0.5">Tingkat Kelulusan</div>
+                    </div>
+                </div>
+
+                <!-- Status Per Siswa (dinamis, dari databaseSiswa) -->
+                <div class="bg-white border border-slate-200/60 rounded-2xl shadow-xs overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex items-center space-x-2">
+                        <i class="fa-solid fa-table text-slate-400 text-xs"></i>
+                        <h3 class="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Status Per Siswa</h3>
+                    </div>
+                    <div id="admin-hasil-list" class="divide-y divide-slate-100"></div>
+                </div>
+
+                <!-- Kelulusan Per PTN & Prodi (dinamis) -->
+                <div class="bg-white border border-slate-200/60 p-5 rounded-2xl shadow-xs space-y-4">
+                    <h3 class="text-xs font-extrabold text-slate-800 flex items-center"><i class="fa-solid fa-sitemap mr-2 text-indigo-600"></i>Distribusi Penerimaan Per Prodi</h3>
+                    <div id="admin-prodi-distribusi" class="space-y-3"></div>
+                </div>
+            </div>
+    </div>
+
+    <!-- ADMIN TAB: SEKOLAH -->
+    <div id="admin-tab-sekolah" class="admin-tab-content hidden p-4 space-y-4">
+        <h2 class="text-sm font-extrabold text-slate-900 flex items-center"><i class="fa-solid fa-school mr-2 text-amber-600"></i>Data Sekolah Peserta</h2>
+        <div class="grid grid-cols-3 gap-2">
+            <div class="bg-white border border-slate-200/60 p-3 rounded-2xl text-center">
+                <div id="sekolah-total-sekolah" class="text-lg font-extrabold text-amber-700">0</div>
+                <div class="text-[9px] text-slate-500 font-semibold uppercase mt-0.5">Sekolah</div>
+            </div>
+            <div class="bg-white border border-slate-200/60 p-3 rounded-2xl text-center">
+                <div id="sekolah-total-siswa" class="text-lg font-extrabold text-blue-700">0</div>
+                <div class="text-[9px] text-slate-500 font-semibold uppercase mt-0.5">Total Siswa</div>
+            </div>
+            <div class="bg-white border border-slate-200/60 p-3 rounded-2xl text-center">
+                <div id="sekolah-rata-lolos" class="text-lg font-extrabold text-emerald-700">0%</div>
+                <div class="text-[9px] text-slate-500 font-semibold uppercase mt-0.5">Rata Kelulusan</div>
+            </div>
+        </div>
+        <div id="admin-sekolah-list" class="space-y-4"></div>
+        <!-- ADMIN TAB: LOG SISTEM -->
+        <div id="admin-tab-log" class="admin-tab-content hidden p-4 space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-extrabold text-slate-900 flex items-center"><i class="fa-solid fa-terminal mr-2 text-slate-600"></i>Log Aktivitas Sistem</h2>
+                <button onclick="clearLog()" class="text-[10px] text-rose-600 hover:text-rose-700 font-bold bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-100 transition-colors">Hapus Log</button>
+            </div>
+            <div class="bg-slate-900 rounded-2xl p-4 min-h-[200px] font-mono text-[11px] space-y-1.5 overflow-y-auto max-h-[500px] no-scrollbar">
+                <div class="text-emerald-400">$ e-seleksi-ptn v2.0.0 — Admin Console</div>
+                <div class="text-slate-500">──────────────────────────────────</div>
+                <div id="system-log" class="space-y-1"></div>
+                <div class="text-slate-500 animate-pulse">█</div>
+            </div>
+
+            <!-- Stat Ringkasan Log -->
+            <div class="bg-white border border-slate-200/60 p-5 rounded-2xl shadow-xs space-y-3">
+                <h3 class="text-xs font-extrabold text-slate-800">Ringkasan Aktivitas Sesi</h3>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="bg-slate-50 p-2.5 rounded-xl flex justify-between items-center">
+                        <span class="text-slate-500">Login Siswa</span><strong id="log-count-login" class="text-slate-800">0</strong>
+                    </div>
+                    <div class="bg-slate-50 p-2.5 rounded-xl flex justify-between items-center">
+                        <span class="text-slate-500">Akses Admin</span><strong id="log-count-admin" class="text-slate-800">1</strong>
+                    </div>
+                    <div class="bg-slate-50 p-2.5 rounded-xl flex justify-between items-center">
+                        <span class="text-slate-500">Pendaftaran</span><strong id="log-count-reg" class="text-slate-800">0</strong>
+                    </div>
+                    <div class="bg-slate-50 p-2.5 rounded-xl flex justify-between items-center">
+                        <span class="text-slate-500">Hasil Proses</span><strong id="log-count-hasil" class="text-slate-800">0</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        </main>
+    </div>
+
+    <!-- ===================== SIDE DRAWER SISWA ===================== -->
+    <div id="sheet-overlay" onclick="toggleBottomSheet(false)" class="hidden fixed inset-0 bg-slate-950/40 backdrop-blur-xs z-50 flex flex-col justify-end no-print">
+        <div id="info-bottom-sheet" onclick="event.stopPropagation()" class="w-full max-w-md mx-auto bg-white rounded-t-2xl shadow-2xl flex flex-col translate-y-full border-t border-slate-100 max-h-[82vh]">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-info text-blue-600 text-xs"></i>
+                    <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Detail Pilihan <span id="sheet-pilihan-ke">1</span></h3>
+                </div>
+                <button onclick="toggleBottomSheet(false)" class="w-7 h-7 bg-white hover:bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-800 transition-colors">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+            <div class="overflow-y-auto p-5 space-y-5 no-scrollbar">
+                <div class="space-y-2.5">
+                    <div class="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center"><i class="fa-solid fa-building-columns mr-1.5 text-xs"></i>Universitas</div>
+                    <div class="bg-slate-50 border border-slate-200/60 p-3.5 rounded-xl text-xs space-y-2 font-medium">
+                        <div class="flex justify-between"><span class="text-slate-400">Kode PTN</span><span id="sheet-kode-ptn" class="text-slate-800 font-bold">--</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Nama PTN</span><span id="sheet-nama-ptn" class="text-slate-800 font-bold">--</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Provinsi</span><span id="sheet-provinsi-ptn" class="text-slate-800 font-bold">--</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Kab/Kota</span><span id="sheet-kabkota-ptn" class="text-slate-800 font-bold">--</span></div>
+                        <div class="flex justify-between border-t border-slate-200/40 pt-2"><span class="text-slate-400">Website</span><span id="sheet-web-ptn" class="text-blue-600 font-bold text-[11px]">--</span></div>
+                    </div>
+                </div>
+                <div class="space-y-2.5">
+                    <div class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center"><i class="fa-solid fa-graduation-cap mr-1.5 text-xs"></i>Program Studi</div>
+                    <div class="bg-slate-50 border border-slate-200/60 p-3.5 rounded-xl text-xs space-y-2 font-medium">
+                        <div class="flex justify-between"><span class="text-slate-400">Kode Prodi</span><span id="sheet-kode-prodi" class="text-slate-800 font-bold">--</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Nama Prodi</span><span id="sheet-nama-prodi" class="text-slate-800 font-bold">--</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Daya Tampung</span><span id="sheet-daya-tampung" class="text-slate-800 font-bold bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">--</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Jenjang</span><span id="sheet-jenjang" class="text-slate-800 font-bold">--</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Akreditasi</span><span id="sheet-akreditasi-prodi" class="text-emerald-600 font-bold">--</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-50 border-t border-slate-100">
+                <button onclick="toggleBottomSheet(false)" class="w-full bg-slate-950 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs shadow-sm">Selesai Meninjau</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DRAWER SISWA -->
+    <div id="drawer-overlay" onclick="toggleDrawer(false)" class="hidden fixed inset-0 bg-slate-950/40 backdrop-blur-xs z-50 flex justify-end no-print">
+        <div id="side-drawer" onclick="event.stopPropagation()" class="w-[85%] max-w-sm bg-white h-full shadow-2xl flex flex-col translate-x-full border-l border-slate-100">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-folder-open text-blue-600 text-xs"></i>
+                    <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Repositori Data Siswa</h3>
+                </div>
+                <button onclick="toggleDrawer(false)" class="w-7 h-7 bg-white hover:bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-800 transition-colors">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-5 space-y-5 no-scrollbar">
+                <div class="space-y-2.5">
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center"><i class="fa-solid fa-building-columns mr-1.5 text-blue-600"></i>Relasi Sekolah</h4>
+                    <div class="bg-slate-50 border border-slate-200/50 p-3.5 rounded-xl text-xs space-y-2 font-medium">
+                        <div class="flex justify-between"><span>NPSN (PK):</span><span id="drawer-npsn" class="text-slate-800 font-bold">--</span></div>
+                        <div class="flex justify-between"><span>Nama Sekolah:</span><span id="drawer-nama-sekolah" class="text-slate-800 font-bold">--</span></div>
+                        <div class="flex justify-between"><span>Akreditasi:</span><span id="drawer-akreditasi" class="text-slate-500 font-bold">--</span></div>
+                    </div>
+                </div>
+                <div class="space-y-2.5">
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center"><i class="fa-solid fa-table-list mr-1.5 text-blue-600"></i>Nilai Rapor</h4>
+                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 text-xs shadow-xs">
+                        <div class="p-3 flex justify-between items-center font-medium"><span>Matematika</span><strong id="drawer-r1" class="text-slate-800">--</strong></div>
+                        <div class="p-3 flex justify-between items-center font-medium"><span>Bahasa Indonesia</span><strong id="drawer-r2" class="text-slate-800">--</strong></div>
+                        <div class="p-3 flex justify-between items-center font-medium"><span>Bahasa Inggris</span><strong id="drawer-r3" class="text-slate-800">--</strong></div>
+                        <div class="p-3 flex justify-between items-center font-medium"><span>Fisika/Ekonomi</span><strong id="drawer-r4" class="text-slate-800">--</strong></div>
+                        <div class="p-3 flex justify-between items-center font-medium"><span>Kimia/Sosiologi</span><strong id="drawer-r5" class="text-slate-800">--</strong></div>
+                        <div class="p-3 bg-blue-50/60 flex justify-between items-center font-bold text-blue-600"><span>Rata-rata</span><span id="drawer-r-avg">--</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-100 bg-slate-50">
+                <button onclick="location.reload()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-colors shadow-xs">
+                    <i class="fa-solid fa-power-off text-[11px]"></i><span>Keluar Sesi</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI -->
+    <div id="popup-modal" class="hidden fixed inset-0 bg-slate-950/40 backdrop-blur-xs z-50 flex items-center justify-center p-6 no-print">
+        <div class="bg-white w-full max-w-xs rounded-2xl p-5 text-center space-y-4 shadow-xl border border-slate-100">
+            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-lg"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="space-y-1.5">
+                <h3 class="text-xs font-bold text-slate-900">Kunci Pilihan Prodi?</h3>
+                <p class="text-[10px] text-slate-400 leading-relaxed px-1">Tindakan ini akan mengunci pilihan program studi secara permanen.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-[11px] transition-colors">Batal</button>
+                <button onclick="kunciDanSimpanPilihan()" class="bg-slate-950 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-[11px] transition-colors">Kunci & Simpan</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Database Mocking - Tabel Universitas (Oracle SQL Sinkronisasi)
+let universitas = [
+    { kode_univ: 'PTN001', nama_univ: 'Universitas Indonesia', provinsi: 'Jawa Barat', kota: 'Depok', website: 'https://www.ui.ac.id' },
+    { kode_univ: 'PTN002', nama_univ: 'Institut Teknologi Bandung', provinsi: 'Jawa Barat', kota: 'Bandung', website: 'https://www.itb.ac.id' },
+    { kode_univ: 'PTN003', nama_univ: 'Universitas Gadjah Mada', provinsi: 'DI Yogyakarta', kota: 'Yogyakarta', website: 'https://www.ugm.ac.id' },
+    { kode_univ: 'PTN004', nama_univ: 'Institut Teknologi Sepuluh Nopember', provinsi: 'Jawa Timur', kota: 'Surabaya', website: 'https://www.its.ac.id' },
+    { kode_univ: 'PTN005', nama_univ: 'Universitas Airlangga', provinsi: 'Jawa Timur', kota: 'Surabaya', website: 'https://www.unair.ac.id' },
+    { kode_univ: 'PTN006', nama_univ: 'Universitas Sumatera Utara', provinsi: 'Sumatera Utara', kota: 'Medan', website: null },
+    { kode_univ: 'PTN007', nama_univ: 'Universitas Hasanuddin', provinsi: 'Sulawesi Selatan', kota: 'Makassar', website: null },
+    { kode_univ: 'PTN008', nama_univ: 'Universitas Diponegoro', provinsi: 'Jawa Tengah', kota: 'Semarang', website: 'https://www.undip.ac.id' },
+    { kode_univ: 'PTN009', nama_univ: 'Universitas Brawijaya', provinsi: 'Jawa Timur', kota: 'Malang', website: 'https://www.ub.ac.id' },
+    { kode_univ: 'PTN010', nama_univ: 'Universitas Andalas', provinsi: 'Sumatera Barat', kota: 'Padang', website: null }
+];
+
+// Database Mocking - Tabel Program Studi (Oracle SQL Sinkronisasi)
+let programStudi = [
+    { kode_prodi: 'PROD001', nama_prodi: 'Teknik Informatika', kuota: 150, jenjang: 'S1', akreditasi: 'A', kode_univ: 'PTN002' },
+    { kode_prodi: 'PROD002', nama_prodi: 'Sistem Informasi', kuota: 120, jenjang: 'S1', akreditasi: 'A', kode_univ: 'PTN002' },
+    { kode_prodi: 'PROD003', nama_prodi: 'Ilmu Komputer', kuota: 140, jenjang: 'S1', akreditasi: 'A', kode_univ: 'PTN001' },
+    { kode_prodi: 'PROD004', nama_prodi: 'Kedokteran', kuota: 100, jenjang: 'S1', akreditasi: 'A', kode_univ: 'PTN003' },
+    { kode_prodi: 'PROD005', nama_prodi: 'Farmasi', kuota: 80, jenjang: 'S1', akreditasi: 'B', kode_univ: 'PTN005' },
+    { kode_prodi: 'PROD006', nama_prodi: 'Teknik Elektro', kuota: 130, jenjang: 'S1', akreditasi: 'A', kode_univ: 'PTN004' },
+    { kode_prodi: 'PROD007', nama_prodi: 'Teknik Mesin', kuota: 110, jenjang: 'S1', akreditasi: 'A', kode_univ: 'PTN004' },
+    { kode_prodi: 'PROD008', nama_prodi: 'Manajemen', kuota: 200, jenjang: 'S1', akreditasi: 'A', kode_univ: 'PTN009' },
+    { kode_prodi: 'PROD009', nama_prodi: 'Akuntansi', kuota: 180, jenjang: 'S1', akreditasi: 'A', kode_univ: 'PTN009' },
+    { kode_prodi: 'PROD010', nama_prodi: 'Ilmu Hukum', kuota: 160, jenjang: 'S1', akreditasi: 'A', kode_univ: 'PTN001' },
+    { kode_prodi: 'PROD011', nama_prodi: 'Rekayasa Nanoteknologi', kuota: 60, jenjang: 'S1', akreditasi: null, kode_univ: 'PTN002' },
+    { kode_prodi: 'PROD012', nama_prodi: 'Sains Data', kuota: 90, jenjang: 'S1', akreditasi: null, kode_univ: 'PTN008' },
+    { kode_prodi: 'PROD013', nama_prodi: 'Teknologi Pangan', kuota: 100, jenjang: 'S1', akreditasi: 'B', kode_univ: 'PTN010' },
+    { kode_prodi: 'PROD014', nama_prodi: 'Arsitektur', kuota: 120, jenjang: 'S1', akreditasi: 'A', kode_univ: 'PTN007' },
+    { kode_prodi: 'PROD015', nama_prodi: 'Kecerdasan Buatan', kuota: 70, jenjang: 'S1', akreditasi: null, kode_univ: 'PTN003' }
+];
+    let userAktif = null;
+    let jalurSekarang = "SNBP";
+    let systemLogs = [];
+    let logCounts = { login: 0, admin: 0, reg: 0, hasil: 0 };
+
+    // Daftar NISN yang mengikuti skenario "SNBP dulu (2023) -> Tidak Lolos -> Lanjut SNBT (2024) -> Lolos"
+    // 2023000001 = Andi Pratama (NISN akhiran 01)
+    // 2023000003 = Citra Lestari (NISN akhiran 03)
+    // 2023000005 = Eko Wijaya    (NISN akhiran 05)
+    const NISN_SKENARIO_SNBP_KE_SNBT = ["2023000001", "2023000003", "2023000005"];
+
+    const adminCredential = { id: "admin", pass: "admin123" };
+
+    const databaseSiswa = {
+        "12346": {
+            nisn: "12346", namaSiswa: "Rafi Pranata Nugraha", jenisKelamin: "Laki-laki", tanggalLahir: "14 Mei 2008",
+            alamatSiswa: "Jl. Merdeka No. 45, Jakarta Pusat", email: "rafi.pranata@school.id", noTeleponSiswa: "0812-3456-7890",
+            npsn: "20109382", namaSekolah: "SMAN 1 Informatika Jakarta", akreditasiSekolah: "A (Unggul)",
+            alamatSekolah: "Jl. Tekno Raya No. 1, Jakarta", noTeleponSekolah: "(021) 555-1234",
+            rapor: "96.80", tipe: "tinggi", pass: "12346", r1: "95.20", r2: "96.00", r3: "97.10", r4: "96.90", r5: "98.80",
+            pilihanUniv: "PTN001", pilihanProdi: "PROD003", statusSeleksi: "Lolos", tanggalHasil: "2026-03-26", pesanHasil: "Selamat! Anda dinyatakan lulus SNBP 2026."
+        },
+        "12345": {
+            nisn: "12345", namaSiswa: "Pascal Kaloka Jaya", jenisKelamin: "Laki-laki", tanggalLahir: "22 Oktober 2007",
+            alamatSiswa: "Sektor 7 Blok C/12, Tangerang Selatan", email: "pascal.kaloka@gmail.com", noTeleponSiswa: "0878-9988-1122",
+            npsn: "20109382", namaSekolah: "SMAN 1 Informatika Jakarta", akreditasiSekolah: "A (Unggul)",
+            alamatSekolah: "Jl. Tekno Raya No. 1, Jakarta", noTeleponSekolah: "(021) 555-1234",
+            rapor: "74.20", tipe: "rendah", pass: "12345", r1: "72.10", r2: "74.00", r3: "75.30", r4: "73.80", r5: "75.80",
+            pilihanUniv: "PTN002", pilihanProdi: "PROD002", statusSeleksi: "Proses", tanggalHasil: "-", pesanHasil: "Skor UTBK sedang diproses oleh sistem."
+        },
+        "2023000001": {
+            nisn: "2023000001", namaSiswa: "Andi Pratama", jenisKelamin: "Laki-laki", tanggalLahir: "12 Maret 2005",
+            alamatSiswa: "Jl. Melati No. 10, Bandung", email: "andipratama@example.com", noTeleponSiswa: "081234567801",
+            npsn: "10100001", namaSekolah: "SMAN 1 Bandung", akreditasiSekolah: "A (Unggul)",
+            alamatSekolah: "Jl. Pendidikan No. 1, Bandung", noTeleponSekolah: "(022) 123-4567",
+            rapor: "92.83", tipe: "tinggi", pass: "2023000001", r1: "90.50", r2: "91.50", r3: "92.83", r4: "94.17", r5: "95.17",
+            pilihanUniv: "PTN001", pilihanProdi: "PROD003", statusSeleksi: "Lolos", tanggalHasil: "2024-06-13", pesanHasil: "Selamat! Anda dinyatakan lulus SNBT 2024."
+        },
+        "2023000002": {
+            nisn: "2023000002", namaSiswa: "Budi Santoso", jenisKelamin: "Laki-laki", tanggalLahir: "25 Juli 2005",
+            alamatSiswa: "Jl. Kenanga No. 5, Jakarta", email: "budisantoso@example.com", noTeleponSiswa: "081234567802",
+            npsn: "10100002", namaSekolah: "SMAN 2 Jakarta", akreditasiSekolah: "A (Unggul)",
+            alamatSekolah: "Jl. Ilmu No. 2, Jakarta", noTeleponSekolah: "(021) 234-5678",
+            rapor: "-", tipe: "-", pass: "2023000002", r1: "-", r2: "-", r3: "-", r4: "-", r5: "-",
+            pilihanUniv: "PTN002", pilihanProdi: "PROD001", statusSeleksi: "Tidak Lolos", tanggalHasil: "2023-06-20", pesanHasil: "Mohon maaf, skor UTBK Anda belum memenuhi persyaratan SNBT 2023."
+        },
+        "2023000003": {
+            nisn: "2023000003", namaSiswa: "Citra Lestari", jenisKelamin: "Perempuan", tanggalLahir: "02 November 2005",
+            alamatSiswa: "Jl. Mawar No. 8, Surabaya", email: "citralestari@example.com", noTeleponSiswa: "-",
+            npsn: "10100003", namaSekolah: "SMAN 3 Surabaya", akreditasiSekolah: "A (Unggul)",
+            alamatSekolah: "Jl. Prestasi No. 3, Surabaya", noTeleponSekolah: "(031) 345-6789",
+            rapor: "85.27", tipe: "sedang", pass: "2023000003", r1: "83.67", r2: "84.67", r3: "85.50", r4: "85.33", r5: "87.17",
+            pilihanUniv: "PTN007", pilihanProdi: "PROD014", statusSeleksi: "Lolos", tanggalHasil: "2024-06-13", pesanHasil: "Selamat! Anda dinyatakan lulus SNBT 2024."
+        },
+        "2023000004": {
+            nisn: "2023000004", namaSiswa: "Dewi Kartika", jenisKelamin: "Perempuan", tanggalLahir: "18 Januari 2005",
+            alamatSiswa: "Jl. Kaliurang No. 22, Yogyakarta", email: "dewikartika@example.com", noTeleponSiswa: "081234567804",
+            npsn: "10100004", namaSekolah: "SMAN 4 Yogyakarta", akreditasiSekolah: "A (Unggul)",
+            alamatSekolah: "Jl. Cerdas No. 4, Yogyakarta", noTeleponSekolah: "(0274) 456-7890",
+            rapor: "-", tipe: "-", pass: "2023000004", r1: "-", r2: "-", r3: "-", r4: "-", r5: "-",
+            pilihanUniv: "PTN009", pilihanProdi: "PROD008", statusSeleksi: "Lolos", tanggalHasil: "2023-06-20", pesanHasil: "Selamat! Anda dinyatakan lulus SNBT 2023."
+        },
+        "2023000005": {
+            nisn: "2023000005", namaSiswa: "Eko Wijaya", jenisKelamin: "Laki-laki", tanggalLahir: "09 Mei 2005",
+            alamatSiswa: "Jl. Sisingamangaraja No. 15, Medan", email: "ekowijaya@example.com", noTeleponSiswa: "081234567805",
+            npsn: "10100005", namaSekolah: "SMAN 5 Medan", akreditasiSekolah: "B (Baik)",
+            alamatSekolah: "Jl. Belajar No. 5, Medan", noTeleponSekolah: "(061) 567-8901",
+            rapor: "79.83", tipe: "rendah", pass: "2023000005", r1: "77.67", r2: "78.83", r3: "79.83", r4: "80.83", r5: "82.00",
+            pilihanUniv: "PTN001", pilihanProdi: "PROD010", statusSeleksi: "Lolos", tanggalHasil: "2023-06-20", pesanHasil: "Selamat! Anda dinyatakan lulus SNBT 2023 pada Pilihan 2."
+        },
+        "2023000006": {
+            nisn: "2023000006", namaSiswa: "Fitri Handayani", jenisKelamin: "Perempuan", tanggalLahir: "14 September 2005",
+            alamatSiswa: "Jl. Pettarani No. 30, Makassar", email: "-", noTeleponSiswa: "081234567806",
+            npsn: "10100006", namaSekolah: "SMAN 6 Makassar", akreditasiSekolah: "A (Unggul)",
+            alamatSekolah: "Jl. Pintar No. 6, Makassar", noTeleponSekolah: "(0411) 678-9012",
+            rapor: "-", tipe: "-", pass: "2023000006", r1: "-", r2: "-", r3: "-", r4: "-", r5: "-",
+            pilihanUniv: "PTN005", pilihanProdi: "PROD005", statusSeleksi: "Tidak Lolos", tanggalHasil: "2023-06-20", pesanHasil: "Mohon maaf, skor UTBK Anda belum memenuhi persyaratan SNBT 2023."
+        },
+        "2023000009": {
+            nisn: "2023000009", namaSiswa: "Indra Maulana", jenisKelamin: "Laki-laki", tanggalLahir: "30 Juni 2005",
+            alamatSiswa: "Jl. MT Haryono No. 3, Madiun", email: "-", noTeleponSiswa: "-",
+            npsn: "10100009", namaSekolah: "SMAN 1 Madiun", akreditasiSekolah: "A (Unggul)",
+            alamatSekolah: "Jl. Cita No. 9, Madiun", noTeleponSekolah: "(0351) 901-2345",
+            rapor: "-", tipe: "-", pass: "2023000009", r1: "-", r2: "-", r3: "-", r4: "-", r5: "-",
+            pilihanUniv: "PTN010", pilihanProdi: "PROD013", statusSeleksi: "Lolos", tanggalHasil: "2024-06-13", pesanHasil: "Selamat! Anda dinyatakan lulus SNBT 2024."
+        }
+    };
+
+// ==========================================
+// PUSAT DATA ADMIN (Single Source of Truth)
+// Semua tab admin (Dashboard, Siswa, PTN/Prodi, Hasil, Sekolah)
+// menghitung angkanya dari databaseSiswa + universitas + programStudi di sini,
+// jadi begitu satu data berubah, semua tab ikut ter-update.
+// ==========================================
+function getUnivByKode(kode) {
+    return universitas.find(u => u.kode_univ === kode) || null;
+}
+function getProdiByKode(kode) {
+    return programStudi.find(p => p.kode_prodi === kode) || null;
+}
+function getSingkatanUniv(namaUniv) {
+    const match = namaUniv ? namaUniv.match(/\(([^)]+)\)/) : null;
+    return match ? match[1] : (namaUniv || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 5);
+}
+
+function computeAdminStats() {
+    const semuaSiswa = Object.values(databaseSiswa);
+    const totalSiswa = semuaSiswa.length;
+    const totalLolos = semuaSiswa.filter(s => s.statusSeleksi === 'Lolos').length;
+    const totalGagal = semuaSiswa.filter(s => s.statusSeleksi === 'Tidak Lolos').length;
+    const totalProses = semuaSiswa.filter(s => s.statusSeleksi === 'Proses').length;
+    const totalSNBP = semuaSiswa.filter(s => s.tipe === 'tinggi').length;
+    const totalSNBT = totalSiswa - totalSNBP;
+
+    const raporValid = semuaSiswa.map(s => parseFloat(s.rapor)).filter(n => !isNaN(n));
+    const raporAvg = raporValid.length ? (raporValid.reduce((a, b) => a + b, 0) / raporValid.length) : 0;
+    const raporMax = raporValid.length ? Math.max(...raporValid) : 0;
+    const raporMin = raporValid.length ? Math.min(...raporValid) : 0;
+
+    const peminatPerPTN = {};
+    universitas.forEach(u => peminatPerPTN[u.kode_univ] = 0);
+    semuaSiswa.forEach(s => {
+        if (s.pilihanUniv && peminatPerPTN.hasOwnProperty(s.pilihanUniv)) peminatPerPTN[s.pilihanUniv]++;
+    });
+
+    const prodiStats = {};
+    programStudi.forEach(p => prodiStats[p.kode_prodi] = { pendaftar: 0, diterima: 0 });
+    semuaSiswa.forEach(s => {
+        if (s.pilihanProdi && prodiStats.hasOwnProperty(s.pilihanProdi)) {
+            prodiStats[s.pilihanProdi].pendaftar++;
+            if (s.statusSeleksi === 'Lolos') prodiStats[s.pilihanProdi].diterima++;
+        }
+    });
+
+    const sekolahMap = {};
+    semuaSiswa.forEach(s => {
+        if (!sekolahMap[s.npsn]) {
+            sekolahMap[s.npsn] = {
+                npsn: s.npsn, namaSekolah: s.namaSekolah, akreditasiSekolah: s.akreditasiSekolah,
+                alamatSekolah: s.alamatSekolah, noTeleponSekolah: s.noTeleponSekolah,
+                siswa: [], jumlahSiswa: 0, jumlahLolos: 0, jumlahGagal: 0, jumlahProses: 0
+            };
+        }
+        const sk = sekolahMap[s.npsn];
+        sk.siswa.push(s);
+        sk.jumlahSiswa++;
+        if (s.statusSeleksi === 'Lolos') sk.jumlahLolos++;
+        else if (s.statusSeleksi === 'Tidak Lolos') sk.jumlahGagal++;
+        else sk.jumlahProses++;
+    });
+    const sekolahList = Object.values(sekolahMap).sort((a, b) => b.jumlahSiswa - a.jumlahSiswa);
+
+    return {
+        totalSiswa, totalLolos, totalGagal, totalProses, totalSNBP, totalSNBT,
+        totalPTN: universitas.length, totalProdi: programStudi.length,
+        raporAvg, raporMax, raporMin, peminatPerPTN, prodiStats, sekolahList
+    };
+}
+
+// Database Mocking - Tabel Skor_UTBK (Sinkronisasi Langsung via No Registrasi Oracle SQL)
+const databaseSkorUtbk = {
+    'REG2023004': { skor: 545.25, pusat: 'Pusat UTBK ITB', tanggal: '2023-05-08', sesi: 'Sesi Pagi' }, // Budi Santoso 2023
+    'REG2023005': { skor: 715.80, pusat: 'Pusat UTBK UGM', tanggal: '2023-05-08', sesi: 'Sesi Siang' }, // Dewi Kartika 2023
+    'REG2023006': { skor: 660.00, pusat: 'Pusat UTBK UGM', tanggal: '2023-05-09', sesi: 'Sesi Pagi' }, // Eko Wijaya 2023 (Lolos)
+    'REG2023007': { skor: 580.00, pusat: 'Pusat UTBK Unair', tanggal: '2023-05-10', sesi: 'Sesi Siang' }, // Citra Lestari 2023 (Tidak Lolos)
+    'REG2023011': { skor: 630.50, pusat: 'Pusat UTBK UI', tanggal: '2023-05-08', sesi: 'Sesi Pagi' }, // Andi Pratama 2023 (Tidak Lolos)
+    'REG2024001': { skor: 675.40, pusat: 'Pusat UTBK UB', tanggal: '2024-05-14', sesi: 'Sesi Pagi' }, // Indra Maulana 2024
+    'REG2024002': { skor: 698.15, pusat: 'Pusat UTBK ITB', tanggal: '2024-05-14', sesi: 'Sesi Siang' }, // Budi Santoso 2024
+    'REG2024003': { skor: 710.20, pusat: 'Pusat UTBK Unair', tanggal: '2024-05-15', sesi: 'Sesi Pagi' }, // Citra Lestari 2024 (Lolos)
+    'REG2024004': { skor: 725.60, pusat: 'Pusat UTBK UI', tanggal: '2024-05-14', sesi: 'Sesi Pagi' } // Andi Pratama 2024 (Lolos)
+};
+
+    const masterUniversitas = {
+    "PTN001": { nama: "Universitas Indonesia (UI)", kode: "311", provinsi: "Jawa Barat", kota: "Depok", website: "https://www.ui.ac.id" },
+    "PTN002": { nama: "Institut Teknologi Bandung (ITB)", kode: "332", provinsi: "Jawa Barat", kota: "Bandung", website: "https://www.itb.ac.id" },
+    "PTN003": { nama: "Universitas Gadjah Mada (UGM)", kode: "361", provinsi: "DI Yogyakarta", kota: "Sleman", website: "https://www.ugm.ac.id" },
+    "PTN004": { nama: "Institut Teknologi Sepuluh Nopember (ITS)", kode: "381", provinsi: "Jawa Timur", kota: "Surabaya", website: "https://www.its.ac.id" },
+    "PTN005": { nama: "Universitas Airlangga (UNAIR)", kode: "382", provinsi: "Jawa Timur", kota: "Surabaya", website: "https://www.unair.ac.id" },
+    "PTN007": { nama: "Universitas Hasanuddin (UNHAS)", kode: "711", provinsi: "Sulawesi Selatan", kota: "Makassar", website: "-" },
+    "PTN008": { nama: "Universitas Diponegoro (UNDIP)", kode: "351", provinsi: "Jawa Tengah", kota: "Semarang", website: "https://www.undip.ac.id" },
+    "PTN009": { nama: "Universitas Brawijaya (UB)", kode: "371", provinsi: "Jawa Timur", kota: "Malang", website: "https://www.ub.ac.id" },
+    "PTN010": { nama: "Universitas Andalas (UNAND)", kode: "131", provinsi: "Sumatera Barat", kota: "Padang", website: "-" }
+};
+
+    const masterProdi = {
+    "PTN001": {
+        "PROD003": { nama: "Ilmu Komputer", dayaTampung: 140, jenjang: "S1", akreditasi: "A", kode: "31101", keketatan: 85, label: "Sangat Ketat" },
+        "PROD010": { nama: "Ilmu Hukum", dayaTampung: 160, jenjang: "S1", akreditasi: "A", kode: "31102", keketatan: 70, label: "Kompetitif" }
+    },
+    "PTN002": {
+        "PROD001": { nama: "Teknik Informatika", dayaTampung: 150, jenjang: "S1", akreditasi: "A", kode: "33201", keketatan: 90, label: "Sangat Ketat" },
+        "PROD002": { nama: "Sistem Informasi", dayaTampung: 120, jenjang: "S1", akreditasi: "A", kode: "33202", keketatan: 75, label: "Kompetitif" },
+        "PROD011": { nama: "Rekayasa Nanoteknologi", dayaTampung: 60, jenjang: "S1", akreditasi: "Baik", kode: "33203", keketatan: 40, label: "Peluang Tinggi" }
+    },
+    "PTN003": {
+        "PROD004": { nama: "Kedokteran", dayaTampung: 100, jenjang: "S1", akreditasi: "A", kode: "36101", keketatan: 95, label: "Ekstrim" },
+        "PROD015": { nama: "Kecerdasan Buatan", dayaTampung: 70, jenjang: "S1", akreditasi: "Baik", kode: "36102", keketatan: 65, label: "Sangat Ketat" }
+    },
+    "PTN004": {
+        "PROD006": { nama: "Teknik Elektro", dayaTampung: 130, jenjang: "S1", akreditasi: "A", kode: "38101", keketatan: 60, label: "Kompetitif" },
+        "PROD007": { nama: "Teknik Mesin", dayaTampung: 110, jenjang: "S1", akreditasi: "A", kode: "38102", keketatan: 55, label: "Kompetitif" }
+    },
+    "PTN005": {
+        "PROD005": { nama: "Farmasi", dayaTampung: 80, jenjang: "S1", akreditasi: "B", kode: "38201", keketatan: 70, label: "Sangat Ketat" }
+    },
+    "PTN007": {
+        "PROD014": { nama: "Arsitektur", dayaTampung: 120, jenjang: "S1", akreditasi: "A", kode: "71101", keketatan: 50, label: "Peluang Tinggi" }
+    },
+    "PTN008": {
+        "PROD012": { nama: "Sains Data", dayaTampung: 90, jenjang: "S1", akreditasi: "Baik", kode: "35101", keketatan: 45, label: "Peluang Tinggi" }
+    },
+    "PTN009": {
+        "PROD008": { nama: "Manajemen", dayaTampung: 200, jenjang: "S1", akreditasi: "A", kode: "37101", keketatan: 80, label: "Sangat Ketat" },
+        "PROD009": { nama: "Akuntansi", dayaTampung: 180, jenjang: "S1", akreditasi: "A", kode: "37102", keketatan: 78, label: "Sangat Ketat" }
+    },
+    "PTN010": {
+        "PROD013": { nama: "Teknologi Pangan", dayaTampung: 100, jenjang: "S1", akreditasi: "B", kode: "13101", keketatan: 35, label: "Peluang Tinggi" }
+    }
+};
+
+// ==========================================
+// DATABASE SKOR UTBK (SINKRON ORACLE SQL)
+// ==========================================
+const dbSkorUtbk = {
+    "REG2023004": { id: 501, skor: 545.25, pusat: "Pusat UTBK ITB", tanggal: "2023-05-08", sesi: "Sesi Pagi" },
+    "REG2023005": { id: 502, skor: 715.80, pusat: "Pusat UTBK UGM", tanggal: "2023-05-08", sesi: "Sesi Siang" },
+    "REG2023007": { id: 504, skor: 580.00, pusat: "Pusat UTBK Unair", tanggal: "2023-05-10", sesi: "Sesi Siang" },
+    "REG2024001": { id: 505, skor: 675.40, pusat: "Pusat UTBK UB", tanggal: "2024-05-14", sesi: "Sesi Pagi" },
+    "REG2024002": { id: 506, skor: 698.15, pusat: "Pusat UTBK ITB", tanggal: "2024-05-14", sesi: "Sesi Siang" },
+    "REG2024003": { id: 507, skor: 710.20, pusat: "Pusat UTBK Unair", tanggal: "2024-05-15", sesi: "Sesi Pagi" }
+};
+
+// ==========================================
+// JAVASCRIPT LOGIC FOR DYNAMIC DROPDOWNS
+// ==========================================
+function initUniversitasDropdown() {
+    const s1 = document.getElementById('univ1');
+    const s2 = document.getElementById('univ2');
+    if (!s1 || !s2) return;
+
+    s1.innerHTML = '<option value="">-- Pilih Universitas --</option>';
+    s2.innerHTML = '<option value="">-- Pilih Universitas --</option>';
+
+    Object.keys(masterUniversitas).forEach(key => {
+        const ptn = masterUniversitas[key];
+        s1.innerHTML += `<option value="${key}">${ptn.nama}</option>`;
+        s2.innerHTML += `<option value="${key}">${ptn.nama}</option>`;
+    });
+}
+
+function updateProdiOptions(pilihanKe) {
+    const univSelect = document.getElementById(`univ${pilihanKe}`);
+    const prodiSelect = document.getElementById(`prodi${pilihanKe}`);
+    const quotaWrapper = document.getElementById(`quota-wrapper-${pilihanKe}`);
+
+    if (!univSelect || !prodiSelect) return;
+
+    const keyUniv = univSelect.value;
+    prodiSelect.innerHTML = `<option value="">-- Pilih Program Studi Pilihan ${pilihanKe} --</option>`;
+    if (quotaWrapper) quotaWrapper.classList.add('hidden');
+
+    if (!keyUniv || !masterProdi[keyUniv]) {
+        prodiSelect.disabled = true;
+        return;
+    }
+
+    prodiSelect.disabled = false;
+    const prodis = masterProdi[keyUniv];
+    Object.keys(prodis).forEach(keyProdi => {
+        prodiSelect.innerHTML += `<option value="${keyProdi}">${prodis[keyProdi].nama} (Daya Tampung: ${prodis[keyProdi].dayaTampung})</option>`;
+    });
+}
+
+function handleProdiSelection(pilihanKe) {
+    const univSelect = document.getElementById(`univ${pilihanKe}`);
+    const prodiSelect = document.getElementById(`prodi${pilihanKe}`);
+    const quotaWrapper = document.getElementById(`quota-wrapper-${pilihanKe}`);
+    const quotaLabel = document.getElementById(`quota-label-${pilihanKe}`);
+    const quotaBar = document.getElementById(`quota-bar-${pilihanKe}`);
+
+    if (!prodiSelect || !prodiSelect.value) {
+        if (quotaWrapper) quotaWrapper.classList.add('hidden');
+        return;
+    }
+
+    const univKey = univSelect.value;
+    const prodiKey = prodiSelect.value;
+    const prodiData = masterProdi[univKey][prodiKey];
+
+    if (quotaWrapper && quotaLabel && quotaBar) {
+        quotaWrapper.classList.remove('hidden');
+        quotaLabel.textContent = `${prodiData.label} (${prodiData.keketatan}%)`;
+
+        quotaBar.className = 'h-full transition-all duration-500 ';
+        quotaBar.style.width = `${prodiData.keketatan}%`;
+
+        if (prodiData.label === "Ekstrim" || prodiData.keketatan >= 85) {
+            quotaLabel.className = "text-rose-600 font-bold";
+            quotaBar.classList.add("bg-rose-500");
+        } else if (prodiData.label === "Sangat Ketat" || prodiData.keketatan >= 65) {
+            quotaLabel.className = "text-orange-600 font-bold";
+            quotaBar.classList.add("bg-orange-500");
+        } else if (prodiData.label === "Kompetitif") {
+            quotaLabel.className = "text-amber-600 font-bold";
+            quotaBar.classList.add("bg-amber-500");
+        } else {
+            quotaLabel.className = "text-emerald-600 font-bold";
+            quotaBar.classList.add("bg-emerald-500");
+        }
+    }
+}
+
+function sinkronisasiDataKartuCetak(userAktif) {
+    if (!userAktif) return;
+
+    let noRegAktif = "REG2024002"; // Fallback default
+
+    if (userAktif.namaSiswa === "Budi Santoso") {
+        noRegAktif = userAktif.tipe === 'tinggi' ? "REG2024002" : "REG2023004";
+    } else if (userAktif.namaSiswa === "Dewi Kartika") {
+        noRegAktif = "REG2023005";
+    } else if (userAktif.namaSiswa === "Eko Wijaya") {
+        noRegAktif = "REG2023006";
+    } else if (userAktif.namaSiswa === "Citra Lestari") {
+        noRegAktif = userAktif.tipe === 'tinggi' ? "REG2024003" : "REG2023007";
+    } else if (userAktif.namaSiswa === "Indra Maulana") {
+        noRegAktif = "REG2024001";
+    } else if (userAktif.no_reg) {
+        noRegAktif = userAktif.no_reg;
+    }
+
+    const dataUtbkSpesifik = dbSkorUtbk[noRegAktif];
+
+    const labelSkenario = document.getElementById('skenario-label-nama');
+    if (labelSkenario) labelSkenario.textContent = userAktif.namaSiswa;
+
+    const hariIni = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('print-no-pendaftaran').textContent = noRegAktif;
+    document.getElementById('print-jalur-seleksi').textContent = userAktif.tipe === 'tinggi' ? 'Jalur SNBP (Prestasi)' : 'Jalur SNBT (Tulis UTBK)';
+    document.getElementById('print-tanggal-daftar').textContent = hariIni;
+    document.getElementById('print-nama').textContent = userAktif.namaSiswa;
+    document.getElementById('print-nisn').textContent = "NISN: " + userAktif.nisn;
+    document.getElementById('print-npsn-card').textContent = "NPSN: " + userAktif.npsn;
+    document.getElementById('print-sekolah-card').textContent = userAktif.namaSekolah;
+    document.getElementById('avatar-foto-cetak').textContent = userAktif.namaSiswa.charAt(0);
+
+    const u1 = document.getElementById('univ1').value;
+    const p1 = document.getElementById('prodi1').value;
+    const u2 = document.getElementById('univ2').value;
+    const p2 = document.getElementById('prodi2').value;
+
+    document.getElementById('print-prodi1').innerHTML = p1 ? `<b>${masterUniversitas[u1].nama}</b> — ${masterProdi[u1][p1].nama}` : '<span class="text-slate-400 italic">Belum memilih</span>';
+    document.getElementById('print-prodi2').innerHTML = p2 ? `<b>${masterUniversitas[u2].nama}</b> — ${masterProdi[u2][p2].nama}` : '<span class="text-slate-400 italic">Belum memilih</span>';
+
+    const jadwalSection = document.getElementById('print-jadwal-section');
+    if (jadwalSection) {
+        if (userAktif.tipe === 'rendah') {
+            jadwalSection.classList.remove('hidden');
+            const ptnUtbk = document.getElementById('print-pusat-utbk');
+
+            if (dataUtbkSpesifik) {
+                if (ptnUtbk) ptnUtbk.textContent = dataUtbkSpesifik.pusat;
+                const elTanggalCetak = ptnUtbk.parentElement.nextElementSibling.querySelector('span:last-child');
+                const elSesiCetak = ptnUtbk.parentElement.nextElementSibling.nextElementSibling.querySelector('span:last-child');
+                if (elTanggalCetak) elTanggalCetak.textContent = dataUtbkSpesifik.tanggal;
+                if (elSesiCetak) elSesiCetak.textContent = dataUtbkSpesifik.sesi;
+            } else {
+                if (ptnUtbk) ptnUtbk.textContent = u1 ? masterUniversitas[u1].nama : "Pusat UTBK Terdekat";
+            }
+        } else {
+            jadwalSection.classList.add('hidden');
+        }
+    }
+
+    if (dataUtbkSpesifik) {
+        const elTabPusat = document.getElementById('utbk-tab-pusat');
+        const elTabTanggal = document.getElementById('utbk-tab-tanggal');
+        const elTabSesi = document.getElementById('utbk-tab-sesi');
+
+        if (elTabPusat) elTabPusat.textContent = dataUtbkSpesifik.pusat;
+        if (elTabTanggal) elTabTanggal.textContent = dataUtbkSpesifik.tanggal;
+        if (elTabSesi) elTabSesi.textContent = dataUtbkSpesifik.sesi;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    initUniversitasDropdown();
+});
+
+    // ========== SYSTEM LOG ==========
+    function addLog(message, type = "info") {
+        const now = new Date();
+        const time = now.toLocaleTimeString('id-ID');
+        const colors = { info: 'text-blue-400', success: 'text-emerald-400', warn: 'text-amber-400', error: 'text-rose-400', system: 'text-slate-400' };
+        const icons = { info: '[INFO]', success: '[OK]', warn: '[WARN]', error: '[ERR]', system: '[SYS]' };
+        systemLogs.push({ time, message, type });
+        const logEl = document.getElementById('system-log');
+        if (logEl) {
+            const line = document.createElement('div');
+            line.className = `${colors[type]} leading-relaxed`;
+            line.innerHTML = `<span class="text-slate-600">${time}</span> <span class="font-bold">${icons[type]}</span> ${message}`;
+            logEl.appendChild(line);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+    }
+
+    function clearLog() {
+        systemLogs = [];
+        const logEl = document.getElementById('system-log');
+        if (logEl) logEl.innerHTML = '';
+        addLog('Log dibersihkan oleh administrator', 'system');
+    }
+
+    // ========== TOAST ==========
+    function showToast(message, type = "info") {
+        const toast = document.getElementById('toast-container');
+        document.getElementById('toast-message').innerText = message;
+        const icon = document.getElementById('toast-icon');
+        if (type === "success") icon.className = "fa-solid fa-circle-check text-emerald-400";
+        else if (type === "error") icon.className = "fa-solid fa-circle-exclamation text-rose-400";
+        else icon.className = "fa-solid fa-circle-info text-blue-400";
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 3500);
+    }
+
+    // ========== LOGIN ==========
+    function handleLogin() {
+        const inputId = document.getElementById('login-nisn').value.trim();
+        const inputPass = document.getElementById('login-pass').value.trim();
+
+        // Cek admin
+        if (inputId === adminCredential.id && inputPass === adminCredential.pass) {
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-admin').classList.remove('hidden');
+            addLog('Administrator berhasil login ke sistem', 'success');
+            addLog('Memuat data dashboard statistik...', 'system');
+            logCounts.admin++;
+            updateLogCounts();
+            renderAdminDashboard();
+            renderAdminStudentList();
+            renderAdminUnivList();
+            renderAdminHasilList();
+            renderAdminSekolahList();
+            showToast('Login Admin berhasil! Selamat datang.', 'success');
+            return;
+        }
+
+        // Cek siswa
+        if (databaseSiswa[inputId] && databaseSiswa[inputId].pass === inputPass) {
+            userAktif = databaseSiswa[inputId];
+            const containerNilai = document.getElementById('container-nilai-rapor'); // Sesuaikan ID element pembungkus list nilai di HTML Anda
+if (containerNilai) {
+    containerNilai.innerHTML = ''; // Kosongkan tampilan lama
+
+    if (userAktif.nilaiSemester && userAktif.nilaiSemester.length > 0) {
+        userAktif.nilaiSemester.forEach(item => {
+            containerNilai.innerHTML += `
+                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">${item.sem}</span>
+                            <span class="text-sm font-bold text-slate-700">Rata-rata: ${item.rata}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center text-xs mt-3">
+                            <div class="bg-slate-50 p-2 rounded-lg">
+                                <span class="block text-slate-400 mb-0.5">Mapel 1</span>
+                                <span class="font-bold text-slate-700">${item.n1}</span>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded-lg">
+                                <span class="block text-slate-400 mb-0.5">Mapel 2</span>
+                                <span class="font-bold text-slate-700">${item.n2}</span>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded-lg">
+                                <span class="block text-slate-400 mb-0.5">Mapel 3</span>
+                                <span class="font-bold text-slate-700">${item.n3}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        // Jika data nilai kosong / tidak ada nilainya ("-")
+        containerNilai.innerHTML = `
+            <div class="col-span-full text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <i class="fa-solid fa-folder-open text-slate-300 text-3xl mb-2"></i>
+                <p class="text-sm text-slate-400">Data nilai rapor belum tersedia untuk siswa ini.</p>
+            </div>
+        `;
+    }
+}
+            logCounts.login++;
+            updateLogCounts();
+            addLog(`Siswa "${userAktif.namaSiswa}" (NISN: ${userAktif.nisn}) login`, 'success');
+
+            document.getElementById('user-display-name').innerText = userAktif.namaSiswa;
+            document.getElementById('lbl-nilai-rapor').innerText = parseFloat(userAktif.rapor).toFixed(0);
+            document.getElementById('progress-ring-rapor').setAttribute('stroke-dasharray', `${userAktif.rapor}, 100`);
+            document.getElementById('chk-simulasi-gagal').checked = false;
+            if (document.getElementById('select-tahun-utbk')) document.getElementById('select-tahun-utbk').value = "2024";
+
+            document.getElementById('profil-nisn').innerText = userAktif.nisn;
+            document.getElementById('profil-nama').innerText = userAktif.namaSiswa;
+            document.getElementById('profil-jk').innerText = userAktif.jenisKelamin;
+            document.getElementById('profil-tgllahir').innerText = userAktif.tanggalLahir;
+            document.getElementById('profil-alamat-siswa').innerText = userAktif.alamatSiswa;
+            document.getElementById('profil-email').innerText = userAktif.email;
+            document.getElementById('profil-telp-siswa').innerText = userAktif.noTeleponSiswa;
+            document.getElementById('profil-npsn').innerText = userAktif.npsn;
+            document.getElementById('profil-nama-sekolah').innerText = userAktif.namaSekolah;
+            document.getElementById('profil-akreditasi').innerText = userAktif.akreditasiSekolah;
+            document.getElementById('profil-alamat-sekolah').innerText = userAktif.alamatSekolah;
+            document.getElementById('print-nama').innerText = userAktif.namaSiswa;
+            document.getElementById('print-nisn').innerText = userAktif.nisn;
+            document.getElementById('print-npsn-card').innerText = userAktif.npsn;
+            document.getElementById('print-sekolah-card').innerText = userAktif.namaSekolah;
+            document.getElementById('avatar-foto-cetak').innerText = userAktif.namaSiswa.charAt(0);
+            document.getElementById('drawer-npsn').innerText = userAktif.npsn;
+            document.getElementById('drawer-nama-sekolah').innerText = userAktif.namaSekolah;
+            document.getElementById('drawer-akreditasi').innerText = userAktif.akreditasiSekolah;
+            document.getElementById('drawer-r1').innerText = userAktif.r1;
+            document.getElementById('drawer-r2').innerText = userAktif.r2;
+            document.getElementById('drawer-r3').innerText = userAktif.r3;
+            document.getElementById('drawer-r4').innerText = userAktif.r4;
+            document.getElementById('drawer-r5').innerText = userAktif.r5;
+            document.getElementById('drawer-r-avg').innerText = userAktif.rapor;
+
+            if (userAktif.tipe === "tinggi" || NISN_SKENARIO_SNBP_KE_SNBT.includes(userAktif.nisn)) {
+                jalurSekarang = "SNBP";
+                document.getElementById('card-kelayakan').innerText = "Eligible (SNBP)";
+                document.getElementById('card-kelayakan').className = "text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200/50";
+                document.getElementById('title-simulasi').innerHTML = `<i class="fa-solid fa-sliders mr-2 text-blue-600"></i> Skenario Kelulusan (${userAktif.namaSiswa}):`;
+                document.getElementById('text-simulasi').innerText = `Simulasikan ${userAktif.namaSiswa} TIDAK LULUS SNBP.`;
+                // Tampilkan sub-panel checkbox simulasi kegagalan (khusus jalur SNBP)
+                if (document.getElementById('sub-panel-snbp-gagal')) document.getElementById('sub-panel-snbp-gagal').classList.remove('hidden');
+                if (document.getElementById('sub-panel-tahun-pendaftaran')) document.getElementById('sub-panel-tahun-pendaftaran').classList.add('hidden');
+            } else {
+                jalurSekarang = "SNBT";
+                document.getElementById('card-kelayakan').innerText = "Lanjut SNBT";
+                document.getElementById('card-kelayakan').className = "text-amber-700 font-bold bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200/50";
+                // Tampilkan sub-panel Skenario Tahun Pendaftaran (khusus jalur SNBT)
+                if (document.getElementById('sub-panel-snbp-gagal')) document.getElementById('sub-panel-snbp-gagal').classList.add('hidden');
+                if (document.getElementById('sub-panel-tahun-pendaftaran')) document.getElementById('sub-panel-tahun-pendaftaran').classList.remove('hidden');
+                if (document.getElementById('skenario-tahun-label-nama')) document.getElementById('skenario-tahun-label-nama').textContent = userAktif.namaSiswa;
+            }
+
+            resetFormPendaftaran();
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-main').classList.remove('hidden');
+            switchTab('profil');
+            showToast(`Sesi akun ${userAktif.namaSiswa} berhasil terotentikasi!`, 'success');
+        } else {
+            addLog(`Percobaan login gagal — ID: "${inputId}"`, 'error');
+            showToast('Akses ditolak! Kredensial tidak valid.', 'error');
+        }
+    }
+
+    function logoutAdmin() {
+        addLog('Administrator logout dari sistem', 'system');
+        location.reload();
+    }
+
+    function updateLogCounts() {
+        const el = {
+            login: document.getElementById('log-count-login'),
+            admin: document.getElementById('log-count-admin'),
+            reg: document.getElementById('log-count-reg'),
+            hasil: document.getElementById('log-count-hasil')
+        };
+        if (el.login) el.login.innerText = logCounts.login;
+        if (el.admin) el.admin.innerText = logCounts.admin;
+        if (el.reg) el.reg.innerText = logCounts.reg;
+        if (el.hasil) el.hasil.innerText = logCounts.hasil;
+    }
+
+    // ========== ADMIN PANEL ==========
+    function switchAdminTab(tabName) {
+        document.querySelectorAll('.admin-tab-content').forEach(t => t.classList.add('hidden'));
+        document.getElementById(`admin-tab-${tabName}`).classList.remove('hidden');
+        document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+            btn.classList.remove('border-blue-600', 'text-blue-600', 'font-bold');
+            btn.classList.add('border-transparent', 'text-slate-400', 'font-medium');
+        });
+        const activeBtn = document.getElementById(`atab-${tabName}`);
+        if (activeBtn) {
+            activeBtn.classList.add('border-blue-600', 'text-blue-600', 'font-bold');
+            activeBtn.classList.remove('border-transparent', 'text-slate-400', 'font-medium');
+        }
+
+        // Semua render dipanggil ulang tiap pindah tab supaya data selalu sinkron & ter-update
+        renderAdminDashboard();
+        renderAdminStudentList();
+        renderAdminUnivList();
+        renderAdminHasilList();
+        renderAdminSekolahList();
+    }
+
+    // ========== DASHBOARD ADMIN (dinamis dari computeAdminStats) ==========
+    function renderAdminDashboard() {
+        const s = computeAdminStats();
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+        set('dash-total-siswa', s.totalSiswa);
+        set('dash-total-lolos', s.totalLolos);
+        set('dash-total-gagal', s.totalGagal);
+        set('dash-total-ptn', s.totalPTN);
+        set('dash-badge-siswa', `${s.totalProdi} prodi`);
+        set('dash-badge-lolos', s.totalSiswa ? Math.round((s.totalLolos / s.totalSiswa) * 100) + '%' : '0%');
+        set('dash-badge-gagal', s.totalSiswa ? Math.round((s.totalGagal / s.totalSiswa) * 100) + '%' : '0%');
+        set('dash-badge-proses', `${s.totalProses} proses`);
+
+        const pctSNBP = s.totalSiswa ? Math.round((s.totalSNBP / s.totalSiswa) * 100) : 0;
+        const pctSNBT = s.totalSiswa ? Math.round((s.totalSNBT / s.totalSiswa) * 100) : 0;
+        set('dash-snbp-label', `${s.totalSNBP} siswa (${pctSNBP}%)`);
+        set('dash-snbt-label', `${s.totalSNBT} siswa (${pctSNBT}%)`);
+        const barSNBP = document.getElementById('dash-snbp-bar'); if (barSNBP) barSNBP.style.width = pctSNBP + '%';
+        const barSNBT = document.getElementById('dash-snbt-bar'); if (barSNBT) barSNBT.style.width = pctSNBT + '%';
+
+        set('dash-rapor-avg', s.raporAvg.toFixed(1));
+        set('dash-rapor-max', s.raporMax.toFixed(1));
+        set('dash-rapor-min', s.raporMin.toFixed(1));
+
+        const peminatContainer = document.getElementById('dash-peminat-list');
+        if (peminatContainer) {
+            peminatContainer.innerHTML = '';
+            const maxPeminat = Math.max(1, ...Object.values(s.peminatPerPTN));
+            const top = universitas
+                .map(u => ({ u, jumlah: s.peminatPerPTN[u.kode_univ] || 0 }))
+                .sort((a, b) => b.jumlah - a.jumlah)
+                .slice(0, 5);
+            top.forEach(({ u, jumlah }) => {
+                const pct = Math.round((jumlah / maxPeminat) * 100);
+                const singkat = getSingkatanUniv(u.nama_univ);
+                const row = document.createElement('div');
+                row.className = 'flex items-center space-x-3 text-xs';
+                row.innerHTML = `
+                    <div class="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0"><span class="text-[10px] font-black text-indigo-700">${singkat}</span></div>
+                    <div class="flex-1">
+                        <div class="flex justify-between font-semibold text-[11px] mb-1"><span class="text-slate-700">${u.nama_univ}</span><span class="text-slate-900 font-bold">${jumlah} pendaftar</span></div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div class="bg-indigo-400 h-full rounded-full bar-fill" style="width:${pct}%"></div></div>
+                    </div>
+                `;
+                peminatContainer.appendChild(row);
+            });
+        }
+    }
+
+    // ========== DATA SEKOLAH (dikelompokkan otomatis dari databaseSiswa) ==========
+    function renderAdminSekolahList() {
+        const container = document.getElementById('admin-sekolah-list');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const s = computeAdminStats();
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        set('sekolah-total-sekolah', s.sekolahList.length);
+        set('sekolah-total-siswa', s.totalSiswa);
+        const totalDiproses = s.totalLolos + s.totalGagal;
+        set('sekolah-rata-lolos', totalDiproses ? Math.round((s.totalLolos / totalDiproses) * 100) + '%' : '0%');
+
+        s.sekolahList.forEach(sk => {
+            const akredBadge = (sk.akreditasiSekolah || '').startsWith('A')
+                ? 'bg-emerald-100 text-emerald-800' : (sk.akreditasiSekolah || '').startsWith('B')
+                ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600';
+
+            let siswaHTML = '';
+            sk.siswa.forEach(sw => {
+                const statusBadge = sw.statusSeleksi === 'Lolos' ? 'bg-emerald-100 text-emerald-700'
+                    : sw.statusSeleksi === 'Tidak Lolos' ? 'bg-rose-100 text-rose-700'
+                    : 'bg-amber-100 text-amber-700';
+                const jalur = sw.tipe === 'tinggi' ? 'SNBP' : 'SNBT';
+                siswaHTML += `
+                    <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl text-xs">
+                        <div class="flex items-center space-x-2 min-w-0">
+                            <div class="w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center text-white font-bold text-[11px] flex-shrink-0">${sw.namaSiswa.charAt(0)}</div>
+                            <div class="min-w-0">
+                                <div class="font-bold text-slate-800 truncate">${sw.namaSiswa}</div>
+                                <div class="text-[10px] text-slate-400">NISN: ${sw.nisn} · ${jalur}</div>
+                            </div>
+                        </div>
+                        <span class="text-[9px] font-bold px-2 py-0.5 rounded flex-shrink-0 ${statusBadge}">${sw.statusSeleksi}</span>
+                    </div>
+                `;
+            });
+
+            const card = document.createElement('div');
+            card.className = 'bg-white border border-slate-200/60 rounded-2xl shadow-xs overflow-hidden';
+            card.innerHTML = `
+                <div class="bg-amber-50 px-4 py-3 border-b border-amber-100">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-amber-900 flex items-center"><i class="fa-solid fa-building mr-2 text-amber-600"></i>${sk.namaSekolah}</h3>
+                        <span class="text-[9px] font-bold ${akredBadge} px-2 py-0.5 rounded-full">${sk.akreditasiSekolah || 'NULL'}</span>
+                    </div>
+                </div>
+                <div class="p-4 space-y-3">
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-50 p-2.5 rounded-xl"><span class="text-[9px] text-slate-400 uppercase block mb-0.5">NPSN</span><strong class="text-slate-800">${sk.npsn}</strong></div>
+                        <div class="bg-slate-50 p-2.5 rounded-xl"><span class="text-[9px] text-slate-400 uppercase block mb-0.5">Total Siswa</span><strong class="text-blue-700">${sk.jumlahSiswa} Siswa</strong></div>
+                        <div class="col-span-2 bg-slate-50 p-2.5 rounded-xl"><span class="text-[9px] text-slate-400 uppercase block mb-0.5">Alamat</span><strong class="text-slate-800">${sk.alamatSekolah || 'NULL (Tidak ada)'}</strong></div>
+                        <div class="bg-slate-50 p-2.5 rounded-xl"><span class="text-[9px] text-slate-400 uppercase block mb-0.5">No. Telepon</span><strong class="text-slate-800">${sk.noTeleponSekolah || 'NULL (Tidak ada)'}</strong></div>
+                        <div class="bg-emerald-50 p-2.5 rounded-xl"><span class="text-[9px] text-emerald-600 uppercase block mb-0.5">Lolos / Gagal / Proses</span><strong class="text-slate-800">${sk.jumlahLolos} / ${sk.jumlahGagal} / ${sk.jumlahProses}</strong></div>
+                    </div>
+                    <div class="border-t border-slate-100 pt-3">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase mb-2">Daftar Siswa dari Sekolah Ini</div>
+                        <div class="space-y-2">${siswaHTML}</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // ========== HASIL SELEKSI (dinamis dari databaseSiswa) ==========
+    function updateAdminRecap() {
+        renderAdminHasilList();
+    }
+
+    function renderAdminHasilList() {
+        const s = computeAdminStats();
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        set('hasil-total-lolos', s.totalLolos);
+        set('hasil-total-gagal', s.totalGagal);
+        const totalDiproses = s.totalLolos + s.totalGagal;
+        set('hasil-tingkat-lulus', totalDiproses ? Math.round((s.totalLolos / totalDiproses) * 100) + '%' : '0%');
+
+        const listContainer = document.getElementById('admin-hasil-list');
+        if (listContainer) {
+            listContainer.innerHTML = '';
+            Object.values(databaseSiswa).forEach(sw => {
+                const jalur = sw.tipe === 'tinggi' ? 'SNBP' : 'SNBT';
+                const univ = sw.pilihanUniv ? getUnivByKode(sw.pilihanUniv) : null;
+                const prodi = sw.pilihanProdi ? getProdiByKode(sw.pilihanProdi) : null;
+                let penempatan = '<span class="text-slate-400 italic">Belum ada penempatan</span>';
+                if (sw.statusSeleksi === 'Lolos' && univ && prodi) {
+                    penempatan = `${prodi.nama_prodi} — <strong class="text-indigo-600">${getSingkatanUniv(univ.nama_univ)}</strong>`;
+                } else if (univ && prodi) {
+                    penempatan = `Pilihan: ${prodi.nama_prodi} (${getSingkatanUniv(univ.nama_univ)})`;
+                }
+                const statusColor = sw.statusSeleksi === 'Lolos' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
+                    : sw.statusSeleksi === 'Tidak Lolos' ? 'bg-rose-50 text-rose-700 border-rose-200/60'
+                    : 'bg-amber-50 text-amber-700 border-amber-200/60';
+                const avatarColor = sw.statusSeleksi === 'Lolos' ? 'bg-blue-600' : sw.statusSeleksi === 'Tidak Lolos' ? 'bg-rose-500' : 'bg-amber-500';
+                const row = document.createElement('div');
+                row.className = 'p-4 flex items-center space-x-3';
+                row.innerHTML = `
+                    <div class="w-9 h-9 ${avatarColor} rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0">${sw.namaSiswa.charAt(0)}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-xs font-bold text-slate-900">${sw.namaSiswa}</div>
+                        <div class="text-[10px] text-slate-400 font-medium">NISN: ${sw.nisn} · Jalur ${jalur} · ${sw.namaSekolah}</div>
+                        <div class="text-[10px] text-indigo-600 font-semibold mt-0.5">${penempatan}</div>
+                    </div>
+                    <span class="text-[9px] font-bold px-2 py-1 rounded-lg border ${statusColor} flex-shrink-0 uppercase">${sw.statusSeleksi}</span>
+                `;
+                listContainer.appendChild(row);
+            });
+        }
+
+        const prodiContainer = document.getElementById('admin-prodi-distribusi');
+        if (prodiContainer) {
+            prodiContainer.innerHTML = '';
+            universitas.forEach(univ => {
+                const prodiTerkait = programStudi.filter(p => p.kode_univ === univ.kode_univ);
+                if (prodiTerkait.length === 0) return;
+                const singkat = getSingkatanUniv(univ.nama_univ);
+                let rows = '';
+                prodiTerkait.forEach(p => {
+                    const st = s.prodiStats[p.kode_prodi] || { pendaftar: 0, diterima: 0 };
+                    rows += `
+                        <div class="px-3 py-2.5 flex justify-between items-center text-[11px]">
+                            <span class="text-slate-600 font-medium">${p.nama_prodi}</span>
+                            <div class="flex items-center space-x-2">
+                                <span class="${st.diterima > 0 ? 'text-emerald-600' : 'text-slate-400'} font-bold">${st.diterima} diterima</span>
+                                <span class="text-slate-300">/</span>
+                                <span class="text-slate-400">Kuota ${p.kuota}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                const block = document.createElement('div');
+                block.className = 'border border-slate-100 rounded-xl overflow-hidden';
+                block.innerHTML = `
+                    <div class="bg-slate-50 px-3 py-2 flex items-center space-x-2">
+                        <span class="text-[10px] font-black text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">${singkat}</span>
+                        <span class="text-[11px] font-bold text-slate-700">${univ.nama_univ}</span>
+                    </div>
+                    <div class="divide-y divide-slate-50">${rows}</div>
+                `;
+                prodiContainer.appendChild(block);
+            });
+        }
+    }
+
+    function renderAdminStudentList() {
+        const container = document.getElementById('admin-student-list');
+        if (!container) return;
+        container.innerHTML = '';
+        const badge = document.getElementById('siswa-count-badge');
+        if (badge) badge.textContent = `${Object.keys(databaseSiswa).length} siswa`;
+        const colors = ['bg-blue-600', 'bg-amber-500', 'bg-emerald-600', 'bg-rose-500'];
+        Object.values(databaseSiswa).forEach((siswa, idx) => {
+            const jalur = siswa.tipe === 'tinggi' ? 'SNBP' : 'SNBT';
+            const jalurColor = siswa.tipe === 'tinggi' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200';
+            const bgColor = colors[idx % colors.length];
+            const raporNum = parseFloat(siswa.rapor);
+            const raporColor = raporNum >= 90 ? 'text-emerald-700' : raporNum >= 75 ? 'text-amber-700' : 'text-rose-700';
+            const card = document.createElement('div');
+            card.className = 'bg-white border border-slate-200/60 rounded-2xl shadow-xs overflow-hidden';
+            card.innerHTML = `
+                <div class="p-4 flex items-center space-x-3">
+                    <div class="w-10 h-10 ${bgColor} rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0">${siswa.namaSiswa.charAt(0)}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-xs font-bold text-slate-900">${siswa.namaSiswa}</div>
+                        <div class="text-[10px] text-slate-400 font-medium">NISN: ${siswa.nisn}</div>
+                        <div class="text-[10px] text-slate-500 font-medium truncate">${siswa.namaSekolah}</div>
+                    </div>
+                    <span class="text-[9px] font-bold px-2 py-1 rounded-lg border ${jalurColor} flex-shrink-0">${jalur}</span>
+                </div>
+                <div class="px-4 pb-3 grid grid-cols-3 gap-2 text-center border-t border-slate-50 pt-3">
+                    <div class="bg-slate-50 rounded-xl p-2">
+                        <div class="text-[11px] font-extrabold ${raporColor}">${siswa.rapor}</div>
+                        <div class="text-[9px] text-slate-400 font-medium">Nilai Rapor</div>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-2">
+                        <div class="text-[11px] font-extrabold text-slate-700">${siswa.akreditasiSekolah.split(' ')[0]}</div>
+                        <div class="text-[9px] text-slate-400 font-medium">Akreditasi</div>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-2">
+                        <div class="text-[11px] font-extrabold text-slate-700">${jalur}</div>
+                        <div class="text-[9px] text-slate-400 font-medium">Jalur</div>
+                    </div>
+                </div>
+                <div class="px-4 pb-3">
+                    <button onclick="showDetailSiswa('${siswa.nisn}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-[11px] transition-colors flex items-center justify-center space-x-1.5">
+                        <i class="fa-solid fa-eye text-xs"></i><span>Lihat Detail Lengkap</span>
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function showDetailSiswa(nisn) {
+        const s = databaseSiswa[nisn];
+        if (!s) return;
+        document.getElementById('d-nisn').innerText = s.nisn;
+        document.getElementById('d-nama').innerText = s.namaSiswa;
+        document.getElementById('d-jk').innerText = s.jenisKelamin;
+        document.getElementById('d-tgl').innerText = s.tanggalLahir;
+        document.getElementById('d-alamat').innerText = s.alamatSiswa;
+        document.getElementById('d-email').innerText = s.email;
+        document.getElementById('d-telp').innerText = s.noTeleponSiswa;
+        document.getElementById('d-npsn').innerText = s.npsn;
+        document.getElementById('d-sekolah').innerText = s.namaSekolah;
+        document.getElementById('d-akreditasi').innerText = s.akreditasiSekolah;
+        document.getElementById('d-jalur').innerText = s.tipe === 'tinggi' ? 'SNBP' : 'SNBT';
+        document.getElementById('d-r1').innerText = s.r1;
+        document.getElementById('d-r2').innerText = s.r2;
+        document.getElementById('d-r3').innerText = s.r3;
+        document.getElementById('d-r4').innerText = s.r4;
+        document.getElementById('d-r5').innerText = s.r5;
+        document.getElementById('d-avg').innerText = s.rapor;
+        document.getElementById('admin-detail-siswa').classList.remove('hidden');
+        document.getElementById('admin-detail-siswa').scrollIntoView({ behavior: 'smooth' });
+        addLog(`Admin membuka detail siswa: ${s.namaSiswa}`, 'info');
+    }
+
+function renderAdminUnivList() {
+    const listContainer = document.getElementById('admin-univ-list');
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
+
+    const stats = computeAdminStats();
+
+    const badgePTN = listContainer.previousElementSibling ? listContainer.previousElementSibling.querySelector('span') : null;
+    if (badgePTN) badgePTN.textContent = `${universitas.length} PTN`;
+
+    universitas.forEach(univ => {
+        const singkat = getSingkatanUniv(univ.nama_univ);
+        const prodiTerkait = programStudi.filter(p => p.kode_univ === univ.kode_univ);
+
+        let prodiHTML = '';
+        if (prodiTerkait.length === 0) {
+            prodiHTML = `<div class="text-[11px] text-slate-400 italic p-1">Belum ada program studi terdaftar.</div>`;
+        } else {
+            prodiTerkait.forEach(p => {
+                const akredText = p.akreditasi ? `(${p.akreditasi})` : '<span class="text-slate-400 italic text-[10px]">(NULL)</span>';
+                const st = stats.prodiStats[p.kode_prodi] || { pendaftar: 0, diterima: 0 };
+                prodiHTML += `
+                    <div class="flex justify-between items-center bg-slate-50 border border-slate-100 p-2 rounded-xl text-xs">
+                        <div>
+                            <span class="text-[9px] font-extrabold bg-slate-200 text-slate-700 px-1 py-0.2 rounded mr-1">${p.kode_prodi}</span>
+                            <span class="font-semibold text-slate-700">${p.nama_prodi}</span>
+                            <span class="text-[10px] text-slate-400 ml-1">${p.jenjang}</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[11px] font-bold text-slate-600">
+                                Kuota: ${p.kuota} Mhs <span class="text-emerald-600 ml-1">${akredText}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-500">
+                                <span class="text-blue-600 font-bold">${st.pendaftar} pendaftar</span> ·
+                                <span class="text-emerald-600 font-bold">${st.diterima} diterima</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        const linkWebsite = univ.website ?
+            `<a href="${univ.website}" target="_blank" class="text-[10px] text-blue-600 hover:underline"><i class="fa-solid fa-globe mr-1"></i>Web</a>` :
+            `<span class="text-[10px] text-slate-400 italic">No Web (NULL)</span>`;
+
+        const cardUniv = document.createElement('div');
+        cardUniv.className = 'bg-white border border-slate-200/60 p-4 rounded-2xl shadow-xs space-y-3';
+        cardUniv.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center font-black text-[10px] text-slate-700 uppercase border border-slate-200">
+                        ${singkat}
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="text-[9px] font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.2 rounded">${univ.kode_univ}</span>
+                            <span class="text-[10px] text-slate-400"><i class="fa-solid fa-location-dot mr-0.5"></i>${univ.kota}, ${univ.provinsi}</span>
+                        </div>
+                        <h4 class="text-xs font-bold text-slate-800 mt-0.5">${univ.nama_univ}</h4>
+                    </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                    ${linkWebsite}
+                    <div class="text-[10px] text-slate-500 font-bold mt-1">${stats.peminatPerPTN[univ.kode_univ] || 0} peminat</div>
+                </div>
+            </div>
+            <div class="space-y-1.5 border-t border-slate-100 pt-3">
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Daftar Program Studi (${prodiTerkait.length}):</div>
+                ${prodiHTML}
+            </div>
+        `;
+        listContainer.appendChild(cardUniv);
+    });
+}
+
+
+
+    // ========== SISWA FUNCTIONS ==========
+    function toggleDrawer(open) {
+        const overlay = document.getElementById('drawer-overlay');
+        const drawer = document.getElementById('side-drawer');
+        if (open) { overlay.classList.remove('hidden'); setTimeout(() => drawer.classList.remove('translate-x-full'), 10); }
+        else { drawer.classList.add('translate-x-full'); setTimeout(() => overlay.classList.add('hidden'), 300); }
+    }
+
+    function toggleBottomSheet(open) {
+        const overlay = document.getElementById('sheet-overlay');
+        const sheet = document.getElementById('info-bottom-sheet');
+        if (open) { overlay.classList.remove('hidden'); setTimeout(() => sheet.classList.remove('translate-y-full'), 10); }
+        else { sheet.classList.add('translate-y-full'); setTimeout(() => overlay.classList.add('hidden'), 300); }
+    }
+
+    function updateProdiOptions(pilihanKe) {
+        const idUniv = document.getElementById(`univ${pilihanKe}`).value;
+        const prodiSelect = document.getElementById(`prodi${pilihanKe}`);
+        prodiSelect.innerHTML = `<option value="">-- Pilih Program Studi Pilihan ${pilihanKe} --</option>`;
+        document.getElementById(`quota-wrapper-${pilihanKe}`).classList.add('hidden');
+        if (idUniv && masterProdi[idUniv]) {
+            prodiSelect.disabled = false;
+            Object.keys(masterProdi[idUniv]).forEach(key => {
+                if (pilihanKe === 2 && idUniv === document.getElementById('univ1').value && key === document.getElementById('prodi1').value) return;
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = masterProdi[idUniv][key].nama;
+                prodiSelect.appendChild(option);
+            });
+        } else { prodiSelect.disabled = true; }
+    }
+
+    function handleProdiSelection(pilihanKe) {
+        const idUniv = document.getElementById(`univ${pilihanKe}`).value;
+        const idProdi = document.getElementById(`prodi${pilihanKe}`).value;
+        if (!idUniv || !idProdi) return;
+        const dataPTN = masterUniversitas[idUniv];
+        const dataProdi = masterProdi[idUniv][idProdi];
+        const qWrapper = document.getElementById(`quota-wrapper-${pilihanKe}`);
+        const qLabel = document.getElementById(`quota-label-${pilihanKe}`);
+        const qBar = document.getElementById(`quota-bar-${pilihanKe}`);
+        qWrapper.classList.remove('hidden');
+        qBar.style.width = dataProdi.keketatan + "%";
+        qLabel.innerText = `${dataProdi.label} (${dataProdi.keketatan}%)`;
+        if (dataProdi.keketatan > 80) { qLabel.className = "text-rose-600"; qBar.className = "bg-rose-500 h-full transition-all duration-500"; }
+        else if (dataProdi.keketatan > 55) { qLabel.className = "text-amber-500"; qBar.className = "bg-amber-500 h-full transition-all duration-500"; }
+        else { qLabel.className = "text-emerald-600"; qBar.className = "bg-emerald-500 h-full transition-all duration-500"; }
+        document.getElementById('sheet-pilihan-ke').innerText = pilihanKe;
+        document.getElementById('sheet-kode-ptn').innerText = dataPTN.kode;
+        document.getElementById('sheet-nama-ptn').innerText = dataPTN.nama;
+        document.getElementById('sheet-provinsi-ptn').innerText = dataPTN.provinsi;
+        document.getElementById('sheet-kabkota-ptn').innerText = dataPTN.kota;
+        document.getElementById('sheet-web-ptn').innerText = dataPTN.website;
+        document.getElementById('sheet-kode-prodi').innerText = dataProdi.kode;
+        document.getElementById('sheet-nama-prodi').innerText = dataProdi.nama;
+        document.getElementById('sheet-daya-tampung').innerText = dataProdi.dayaTampung + " Kursi";
+        document.getElementById('sheet-jenjang').innerText = dataProdi.jenjang;
+        document.getElementById('sheet-akreditasi-prodi').innerText = dataProdi.akreditasi;
+        toggleBottomSheet(true);
+        if (pilihanKe === 1) updateProdiOptions(2);
+    }
+
+    function resetFormPendaftaran() {
+        ['univ1','univ2'].forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
+        document.getElementById('prodi1').innerHTML = `<option value="">-- Pilih Program Studi Pilihan 1 --</option>`;
+        document.getElementById('prodi1').disabled = true;
+        document.getElementById('prodi2').innerHTML = `<option value="">-- Pilih Program Studi Pilihan 2 --</option>`;
+        document.getElementById('prodi2').disabled = true;
+        document.getElementById('quota-wrapper-1').classList.add('hidden');
+        document.getElementById('quota-wrapper-2').classList.add('hidden');
+        document.getElementById('btn-submit-registrasi').classList.remove('hidden');
+        document.getElementById('wrapper-cetak-dokumen').classList.add('hidden');
+        document.getElementById('form-container-utama').classList.remove('hidden');
+        document.getElementById('badge-jalur').innerText = jalurSekarang === "SNBP" ? "Jalur SNBP (Prestasi)" : "Jalur SNBT (Tes Tulis)";
+        document.getElementById('hasil-locked').classList.remove('hidden');
+        document.getElementById('panel-deklarasi-hasil').classList.add('hidden');
+        document.getElementById('utbk-locked').classList.remove('hidden');
+        document.getElementById('utbk-ready').classList.add('hidden');
+        document.getElementById('utbk-finished').classList.add('hidden');
+        document.getElementById('box-snbp-ke-snbt').classList.add('hidden');
+        if (document.getElementById('btn-lihat-hasil-utbk')) document.getElementById('btn-lihat-hasil-utbk').classList.add('hidden');
+        document.getElementById('panel-simulasi-kontrol').classList.remove('hidden');
+    }
+
+    function openModal() {
+        if (!document.getElementById('prodi1').value) { showToast("Lengkapi Program Studi Utama Anda!", "error"); return; }
+        document.getElementById('popup-modal').classList.remove('hidden');
+    }
+
+    function closeModal() { document.getElementById('popup-modal').classList.add('hidden'); }
+
+function kunciDanSimpanPilihan() {
+    closeModal();
+    const u1Key = document.getElementById('univ1').value;
+    const p1Key = document.getElementById('prodi1').value;
+    const u2Key = document.getElementById('univ2').value;
+    const p2Key = document.getElementById('prodi2').value;
+
+    ['univ1','prodi1','univ2','prodi2'].forEach(id => document.getElementById(id).disabled = true);
+
+    const labelP1 = masterUniversitas[u1Key].nama + " - " + masterProdi[u1Key][p1Key].nama;
+    const labelP2 = u2Key && p2Key ? masterUniversitas[u2Key].nama + " - " + masterProdi[u2Key][p2Key].nama : "Tidak Memilih Prioritas Kedua";
+
+    // Pusat UTBK kini mengikuti Universitas Pilihan 1 siswa, bukan nilai statis
+    const pusatUtbkTerpilih = "Pusat UTBK " + masterUniversitas[u1Key].nama;
+    userAktif.pusat_utbk = pusatUtbkTerpilih;
+    const displayPretest = document.getElementById('display-pusat-utbk-pretest');
+    if (displayPretest) displayPretest.innerText = pusatUtbkTerpilih;
+
+    const tglSekarang = new Date();
+    const formatTanggal = tglSekarang.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    // ==========================================
+    // FIX UTAMA: PEMETAAN NO REGISTRASI SESUAI SQL ORACLE
+    // ==========================================
+    let noRegSesuaiOracle = "REG2024999"; // Fallback default
+
+    if (userAktif.nisn === "2023000004" || userAktif.namaSiswa?.includes("Dewi")) {
+        noRegSesuaiOracle = "REG2023005"; // Dewi Kartika
+    } else if (userAktif.nisn === "2023000001" || userAktif.namaSiswa?.includes("Andi")) {
+        let optTahun = document.getElementById('select-tahun-utbk')?.value || "2024";
+        noRegSesuaiOracle = (optTahun === "2023") ? "REG2023011" : "REG2024004"; // Andi Pratama
+    } else if (userAktif.nisn === "2023000005" || userAktif.namaSiswa?.includes("Eko")) {
+        // Eko Wijaya hanya pernah mendaftar SNBT tahun 2023 dan LOLOS (Pilihan Prioritas 2).
+        // Ia tidak mendaftar lagi di 2024, sehingga No. Registrasi selalu mengacu ke data 2023.
+        noRegSesuaiOracle = "REG2023006"; // Eko Wijaya
+    } else if (userAktif.nisn === "2023000009" || userAktif.namaSiswa?.includes("Indra")) {
+        noRegSesuaiOracle = "REG2024001"; // Indra Maulana
+    } else if (userAktif.nisn === "2023000002" || userAktif.namaSiswa?.includes("Budi")) {
+        let optTahun = document.getElementById('select-tahun-utbk')?.value || "2024";
+        noRegSesuaiOracle = (optTahun === "2023") ? "REG2023004" : "REG2024002"; // Budi Santoso
+    } else if (userAktif.nisn === "2023000003" || userAktif.namaSiswa?.includes("Citra")) {
+        let optTahun = document.getElementById('select-tahun-utbk')?.value || "2024";
+        noRegSesuaiOracle = (optTahun === "2023") ? "REG2023007" : "REG2024003"; // Citra Lestari
+    } else {
+        // Fallback jika login menggunakan akun dummy bawaan (Pascal / Rafi)
+        noRegSesuaiOracle = (jalurSekarang === "SNBP" ? "REG2026B" : "REG2026T") + userAktif.nisn;
+    }
+
+    // Tanam kode registrasi yang valid ke sesi user aktif agar dibaca oleh fungsi UTBK
+    userAktif.no_reg_utbk = noRegSesuaiOracle;
+
+    // Inject data ke element HTML Kartu Peserta
+    document.getElementById('print-no-pendaftaran').innerText = noRegSesuaiOracle;
+    document.getElementById('print-jalur-seleksi').innerText = jalurSekarang;
+    document.getElementById('print-tanggal-daftar').innerText = formatTanggal;
+    document.getElementById('print-periode-pendaftaran').innerText = "2026";
+    document.getElementById('print-prodi1').innerText = labelP1;
+    document.getElementById('print-prodi2').innerText = labelP2;
+
+    // Handle tampilan section jadwal UTBK di bawah kartu jika siswa adalah peserta UTBK (tipe rendah/SNBT)
+    const jadwalSection = document.getElementById('print-jadwal-section');
+    if (jadwalSection) {
+        if (jalurSekarang === "SNBT" || userAktif.tipe === 'rendah') {
+            jadwalSection.classList.remove('hidden');
+
+            // Map Informasi Pusat UTBK berdasarkan database SQL Oracle Anda
+            const databaseSkorUtbk = {
+                'REG2023004': { pusat: 'Pusat UTBK ITB' },
+                'REG2023005': { pusat: 'Pusat UTBK UGM' },
+                'REG2023006': { pusat: 'Pusat UTBK UGM' },
+                'REG2023007': { pusat: 'Pusat UTBK Unair' },
+                'REG2023011': { pusat: 'Pusat UTBK UI' },
+                'REG2024001': { pusat: 'Pusat UTBK UB' },
+                'REG2024002': { pusat: 'Pusat UTBK ITB' },
+                'REG2024003': { pusat: 'Pusat UTBK Unair' },
+                'REG2024004': { pusat: 'Pusat UTBK UI' }
+            };
+
+            const ptnUtbk = document.getElementById('print-pusat-utbk');
+            if (ptnUtbk) {
+                ptnUtbk.textContent = pusatUtbkTerpilih;
+            }
+        } else {
+            jadwalSection.classList.add('hidden');
+        }
+    }
+
+    document.getElementById('form-container-utama').classList.add('hidden');
+    document.getElementById('wrapper-cetak-dokumen').classList.remove('hidden');
+
+    // Perbarui tab UTBK dari locked menjadi ready
+    document.getElementById('utbk-locked').classList.add('hidden');
+    document.getElementById('utbk-ready').classList.remove('hidden');
+
+    addLog(`Pilihan prodi berhasil dikunci. No Registrasi disinkronkan: ${noRegSesuaiOracle}`, 'reg');
+    showToast("Pilihan Prodi Berhasil Dikunci!", "success");
+}
+
+function prosesUjianUtbk() {
+    if (!userAktif) {
+        showToast("Silahkan login terlebih dahulu!", "error");
+        return;
+    }
+
+    // 1. Tentukan No Registrasi secara otomatis berdasarkan akun siswa yang sedang login
+    let noRegUtbk = "REG2024999";
+
+    if (userAktif.nisn === "2023000004") {
+        noRegUtbk = "REG2023005"; // Dewi Kartika
+    } else if (userAktif.nisn === "2023000001") {
+        let optTahun = document.getElementById('select-tahun-utbk')?.value || "2024";
+        noRegUtbk = (optTahun === "2023") ? "REG2023011" : "REG2024004"; // Andi Pratama
+    } else if (userAktif.nisn === "2023000005") {
+        // Eko Wijaya hanya pernah mendaftar SNBT tahun 2023 dan LOLOS (Pilihan Prioritas 2).
+        noRegUtbk = "REG2023006"; // Eko Wijaya
+    } else if (userAktif.nisn === "2023000009") {
+        noRegUtbk = "REG2024001"; // Indra Maulana
+    } else if (userAktif.nisn === "2023000002") {
+        let optTahun = document.getElementById('select-tahun-utbk')?.value || "2024";
+        noRegUtbk = (optTahun === "2023") ? "REG2023004" : "REG2024002"; // Budi Santoso
+    } else if (userAktif.nisn === "2023000003") {
+        let optTahun = document.getElementById('select-tahun-utbk')?.value || "2024";
+        noRegUtbk = (optTahun === "2023") ? "REG2023007" : "REG2024003"; // Citra Lestari
+    }
+
+    // Database UTBK internal berdasarkan data Oracle SQL Anda
+    const databaseSkorUtbk = {
+        'REG2023004': { skor: 545.25, pusat: 'Pusat UTBK ITB', tanggal: '2023-05-08', sesi: 'Sesi Pagi' },
+        'REG2023005': { skor: 715.80, pusat: 'Pusat UTBK UGM', tanggal: '2023-05-08', sesi: 'Sesi Siang' },
+        'REG2023006': { skor: 660.00, pusat: 'Pusat UTBK USU', tanggal: '2023-05-09', sesi: 'Sesi Pagi' },
+        'REG2023007': { skor: 580.00, pusat: 'Pusat UTBK Unair', tanggal: '2023-05-10', sesi: 'Sesi Siang' },
+        'REG2023011': { skor: 630.50, pusat: 'Pusat UTBK UI', tanggal: '2023-05-08', sesi: 'Sesi Pagi' },
+        'REG2024001': { skor: 675.40, pusat: 'Pusat UTBK UB', tanggal: '2024-05-14', sesi: 'Sesi Pagi' },
+        'REG2024002': { skor: 698.15, pusat: 'Pusat UTBK ITB', tanggal: '2024-05-14', sesi: 'Sesi Siang' },
+        'REG2024003': { skor: 710.20, pusat: 'Pusat UTBK Unair', tanggal: '2024-05-15', sesi: 'Sesi Pagi' },
+        'REG2024004': { skor: 725.60, pusat: 'Pusat UTBK UI', tanggal: '2024-05-14', sesi: 'Sesi Pagi' }
+    };
+
+    const dataOracle = databaseSkorUtbk[noRegUtbk];
+
+    let skorAkhir = 0;
+    // Pusat UTBK selalu mengikuti pilihan universitas siswa (Pilihan 1), bukan UI - Depok untuk semua orang
+    let pusatUtbk = userAktif.pusat_utbk || "Pusat UTBK Terdekat";
+    let tanggalUtbk = "2024-05-14";
+    let sesiUtbk = "Sesi Pagi";
+
+    if (dataOracle) {
+        skorAkhir = dataOracle.skor;
+        tanggalUtbk = dataOracle.tanggal;
+        sesiUtbk = dataOracle.sesi;
+    } else {
+        if (userAktif.tipe === "tinggi") {
+            skorAkhir = parseFloat((Math.random() * (790 - 690) + 690).toFixed(2));
+        } else {
+            skorAkhir = parseFloat((Math.random() * (559 - 450) + 450).toFixed(2));
+        }
+    }
+
+    // Amankan data ke object global userAktif agar fungsi kelulusan sinkron
+    userAktif.skor_utbk = skorAkhir;
+    userAktif.no_reg_utbk = noRegUtbk;
+
+    // --- CETAK / OVERWRITE HTML COMPONENT SECARA UTUH AGAR TIDAK TERTELAN KODE LAMA ---
+    const finishedContainer = document.getElementById('utbk-finished');
+    if (finishedContainer) {
+        finishedContainer.innerHTML = `
+            <div class="bg-white border border-slate-200/50 p-5 rounded-2xl shadow-xs space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                    <span class="bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider">
+                        <i class="fa-solid fa-square-poll-vertical mr-1"></i> Skor UTBK Resmi
+                    </span>
+                    <span class="text-[10px] font-mono text-slate-400 font-bold">ID: ${noRegUtbk}</span>
+                </div>
+
+                <div class="text-center py-4 bg-gradient-to-b from-blue-50/50 to-white rounded-xl border border-blue-100/50">
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Nilai UTBK Diperoleh</p>
+                    <h2 id="display-skor-utbk" class="text-4xl font-black text-blue-600 my-1">${skorAkhir.toFixed(2)}</h2>
+                    <p class="text-[10px] text-slate-500 font-medium">${tanggalUtbk} (${sesiUtbk})</p>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200/60 p-3 rounded-xl text-[11px] grid grid-cols-2 gap-2.5 font-medium">
+                    <div class="col-span-2 text-[9px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200/60 pb-1 flex items-center">
+                        <i class="fa-solid fa-database mr-1.5 text-blue-500"></i> Relasi Atribut Skor_UTBK
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px] uppercase">Pusat UTBK</span>
+                        <strong class="text-slate-800 font-bold">${pusatUtbk}</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px] uppercase">Nomor Registrasi</span>
+                        <strong class="text-slate-800 font-bold">${noRegUtbk}</strong>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-[11px] text-emerald-800 font-medium flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+                    <span>Sinkronisasi Oracle SQL Berhasil Terverifikasi!</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // Atur visibilitas panel tab UTBK
+    if (document.getElementById('utbk-ready')) document.getElementById('utbk-ready').classList.add('hidden');
+    if (document.getElementById('utbk-finished')) document.getElementById('utbk-finished').classList.remove('hidden');
+    if (document.getElementById('btn-lihat-hasil-utbk')) document.getElementById('btn-lihat-hasil-utbk').classList.remove('hidden');
+
+    addLog(`[Oracle SQL Sync] Berhasil memuat skor UTBK untuk ${userAktif.namaSiswa}: ${skorAkhir}`, 'hasil');
+    showToast(`Skor UTBK Berhasil Diperbarui: ${skorAkhir}`, "success");
+
+    // Jalankan sistem kelulusan nasional otomatis
+    if (typeof prosesKelulusanNasional === "function") {
+        prosesKelulusanNasional();
+    }
+}
+function prosesKelulusanNasional() {
+    if (!userAktif) return;
+
+    const u1Key = document.getElementById('univ1')?.value;
+    const p1Key = document.getElementById('prodi1')?.value;
+    const u2Key = document.getElementById('univ2')?.value;
+    const p2Key = document.getElementById('prodi2')?.value;
+
+    const namaUniv1 = (u1Key && masterUniversitas[u1Key]) ? masterUniversitas[u1Key].nama : "PTN Pilihan Utama";
+    const namaProdi1 = (u1Key && p1Key && masterProdi[u1Key]?.[p1Key]) ? masterProdi[u1Key][p1Key].nama : "Prodi Pilihan Utama";
+    const namaUniv2 = (u2Key && masterUniversitas[u2Key]) ? masterUniversitas[u2Key].nama : "";
+    const namaProdi2 = (u2Key && p2Key && masterProdi[u2Key]?.[p2Key]) ? masterProdi[u2Key][p2Key].nama : "";
+
+    let statusLolos = false;
+    let pesanDetail = "";
+    let ptnLolos = namaUniv1;
+    let prodiLolos = namaProdi1;
+
+    // 1. PENENTUAN STATUS KELULUSAN
+    if (jalurSekarang === "SNBP") {
+        const mauGagal = document.getElementById('chk-simulasi-gagal')?.checked;
+        if (!mauGagal && (userAktif.tipe === "tinggi" || userAktif.nisn === "12346" || NISN_SKENARIO_SNBP_KE_SNBT.includes(userAktif.nisn))) {
+            statusLolos = true;
+            pesanDetail = `Selamat! Anda dinyatakan LULOS Seleksi Nasional Berdasarkan Prestasi (SNBP) di ${namaUniv1} pada Program Studi ${namaProdi1}.`;
+        } else {
+            statusLolos = false;
+            pesanDetail = "Mohon maaf, Anda dinyatakan TIDAK LULOS seleksi jalur SNBP. Tetap semangat dan persiapkan diri Anda untuk jalur SNBT (UTBK)!";
+        }
+    } else if (jalurSekarang === "SNBT") {
+        // ==========================================
+        // ATURAN KELULUSAN SNBT NASIONAL: Ambang batas tunggal 650.00
+        // Berlaku untuk seluruh siswa jalur SNBT, tanpa pengecualian per-NISN.
+        // ==========================================
+        const AMBANG_BATAS_SNBT = 650.00;
+        const skorUtbkSiswa = userAktif.skor_utbk || 0;
+
+        statusLolos = skorUtbkSiswa >= AMBANG_BATAS_SNBT;
+
+        // Sejumlah siswa yang lolos melalui Pilihan Prioritas 2 (bukan bagian dari aturan ambang batas)
+        if (statusLolos && (userAktif.nisn === "2023000005" || userAktif.nisn === "2023000002")) {
+            ptnLolos = namaUniv2;
+            prodiLolos = namaProdi2;
+        }
+
+        pesanDetail = statusLolos
+            ? "Selamat! Anda dinyatakan LULOS UTBK-SNBT."
+            : `Mohon maaf, skor UTBK Anda belum memenuhi ambang batas kelulusan nasional minimal ${AMBANG_BATAS_SNBT.toFixed(2)}.`;
+    }
+
+    userAktif.status_kelulusan = statusLolos ? "LOLOS" : "GAGAL";
+    addLog(`[Sistem Kelulusan] ${userAktif.namaSiswa}: ${userAktif.status_kelulusan}`, 'hasil');
+
+    // 2. TENTUKAN TUJUAN NAVIGASI
+    if (jalurSekarang === "SNBP") {
+        switchTab('hasil');
+    } else if (jalurSekarang === "SNBT" && !userAktif.skor_utbk) {
+        // Siswa SNBT yang belum mengikuti simulasi UTBK: arahkan ke tab UTBK dulu, jangan proses hasil
+        switchTab('utbk');
+        return;
+    } else {
+        switchTab('hasil');
+    }
+
+    // 3. TAMPILKAN HASIL MENGGUNAKAN ELEMEN ASLI PADA TEMPLATE (id yang benar-benar ada di HTML)
+    setTimeout(() => {
+        // Sembunyikan status "Hasil Belum Diproses"
+        const hasilLocked = document.getElementById('hasil-locked');
+        if (hasilLocked) hasilLocked.classList.add('hidden');
+
+        // Tampilkan panel pengumuman hasil
+        const panelDeklarasi = document.getElementById('panel-deklarasi-hasil');
+        if (panelDeklarasi) panelDeklarasi.classList.remove('hidden');
+
+        const elStatus = document.getElementById('final-status-kelulusan');
+        const elDesc = document.getElementById('final-deskripsi-status');
+        const elPtn = document.getElementById('final-nama-ptn');
+        const elProdi = document.getElementById('final-nama-prodi');
+        const wrapperPenerima = document.getElementById('wrapper-atribut-penerima');
+        const boxSkorGagal = document.getElementById('box-skor-gagal-utbk');
+        const textSkorGagal = document.getElementById('text-skor-gagal-utbk');
+        const icon = document.getElementById('icon-status-hasil');
+        const border = document.getElementById('border-kondisi-kelulusan');
+        const boxSnbt = document.getElementById('box-snbp-ke-snbt');
+        const elIdHasil = document.getElementById('final-id-hasil');
+        const elTglPengumuman = document.getElementById('final-tgl-pengumuman');
+
+        const noRegHasil = (userAktif.no_reg_utbk || ('HSL' + userAktif.nisn));
+        const tglPengumuman = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        if (elIdHasil) elIdHasil.innerText = "ID_Hasil: " + noRegHasil;
+        if (elTglPengumuman) elTglPengumuman.innerText = "Tanggal: " + tglPengumuman;
+
+        if (statusLolos) {
+            // JIKA LULUS (TAMPILAN HIJAU)
+            if (elStatus) elStatus.innerText = "SELAMAT! ANDA DINYATAKAN LULUS";
+            if (elDesc) elDesc.innerText = pesanDetail;
+            if (elPtn) elPtn.innerText = ptnLolos;
+            if (elProdi) elProdi.innerText = prodiLolos;
+            if (wrapperPenerima) wrapperPenerima.classList.remove('hidden');
+            if (boxSkorGagal) boxSkorGagal.classList.add('hidden');
+            if (boxSnbt) boxSnbt.classList.add('hidden');
+            if (icon) icon.className = "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto text-2xl border mb-3 bg-emerald-50 text-emerald-600 border-emerald-200";
+            if (icon) icon.innerHTML = '<i class="fa-solid fa-award"></i>';
+            if (border) border.className = "bg-white border-2 border-emerald-200 rounded-2xl p-6 text-center space-y-5 shadow-xs relative overflow-hidden";
+        } else {
+            // JIKA TIDAK LULUS (TAMPILAN MERAH)
+            if (elStatus) elStatus.innerText = "MOHON MAAF, ANDA BELUM LOLOS";
+            if (elDesc) elDesc.innerText = pesanDetail;
+            if (wrapperPenerima) wrapperPenerima.classList.add('hidden');
+            if (icon) icon.className = "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto text-2xl border mb-3 bg-rose-50 text-rose-600 border-rose-200";
+            if (icon) icon.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
+            if (border) border.className = "bg-white border-2 border-rose-200 rounded-2xl p-6 text-center space-y-5 shadow-xs relative overflow-hidden";
+
+            // CRITICAL REVISION: Tampilkan transparan skor UTBK yang gagal (khusus jalur SNBT)
+            if (boxSkorGagal) {
+                if (jalurSekarang === "SNBT") {
+                    const AMBANG_BATAS_SNBT = 650.00;
+                    const skorGagalTampil = (userAktif.skor_utbk || 0).toFixed(2);
+                    if (textSkorGagal) {
+                        textSkorGagal.innerText = `Skor UTBK Anda: ${skorGagalTampil} (Belum memenuhi ambang batas kelulusan minimal ${AMBANG_BATAS_SNBT.toFixed(2)})`;
+                    }
+                    boxSkorGagal.classList.remove('hidden');
+                } else {
+                    boxSkorGagal.classList.add('hidden');
+                }
+            }
+
+            // Tombol "Lanjut Daftar SNBT" hanya relevan jika yang gagal adalah jalur SNBP
+            if (boxSnbt) {
+                if (jalurSekarang === "SNBP") boxSnbt.classList.remove('hidden');
+                else boxSnbt.classList.add('hidden');
+            }
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showToast("Hasil Kelulusan Berhasil Dimuat!", "success");
+    }, 150); // Jeda waktu sedikit agar transisi switchTab aman
+}
+
+    function pindahKeJalurSnbt() {
+        jalurSekarang = "SNBT";
+        showToast("Dialihkan ke Jalur SNBT.", "info");
+        addLog(`${userAktif.namaSiswa} beralih ke jalur SNBT`, 'info');
+        resetFormPendaftaran();
+        document.getElementById('panel-simulasi-kontrol').classList.remove('hidden');
+        if (document.getElementById('sub-panel-snbp-gagal')) document.getElementById('sub-panel-snbp-gagal').classList.add('hidden');
+        if (document.getElementById('sub-panel-tahun-pendaftaran')) document.getElementById('sub-panel-tahun-pendaftaran').classList.remove('hidden');
+        if (document.getElementById('skenario-tahun-label-nama')) document.getElementById('skenario-tahun-label-nama').textContent = userAktif.namaSiswa;
+        if (document.getElementById('select-tahun-utbk')) {
+            document.getElementById('select-tahun-utbk').value = (userAktif.nisn === "2023000005") ? "2023" : "2024";
+        }
+        switchTab('prodi');
+    }
+
+    function lanjutAlurSeleksi() {
+    if (!userAktif) return;
+
+    // Jalankan sistem penilaian kelulusan terlebih dahulu
+    if (typeof prosesKelulusanNasional === "function") {
+        prosesKelulusanNasional();
+    }
+
+    // Cek Jalur Seleksi Aktif (murni berdasarkan jalurSekarang, agar siswa yang beralih ke SNBT tidak dipaksa balik ke SNBP)
+    if (jalurSekarang === "SNBP") {
+        // Jika SNBP, lempar langsung ke halaman Pengumuman Kelulusan
+        switchTab('hasil');
+        showToast("Menampilkan Pengumuman Kelulusan SNBP Anda!", "success");
+    } else {
+        // Jika SNBT (Dewi, Eko, Budi, dll), arahkan ke halaman Simulasi UTBK
+        switchTab('utbk');
+        showToast("Silakan lanjutkan ke Simulasi UTBK-SNBT", "info");
+    }
+}
+function switchTab(tabName) {
+    // -----------------------------------------------------------------
+    // ALUR OTOMATIS BERDASARKAN JALUR (SNBP vs SNBT)
+    // -----------------------------------------------------------------
+    if (tabName === 'utbk') {
+        if (jalurSekarang === "SNBP") {
+            // JALUR SNBP: Tidak boleh lewat UTBK, langsung lempar ke proses kelulusan & halaman Hasil
+            showToast("Jalur SNBP: Melewati simulasi UTBK, langsung memproses hasil...", "info");
+
+            // Jalankan fungsi kalkulasi kelulusan bawaan Anda
+            if (typeof prosesKelulusanNasional === "function") {
+                prosesKelulusanNasional();
+            }
+
+            // Alihkan paksa tujuan ke tab hasil
+            tabName = 'hasil';
+        }
+    }
+
+    if (tabName === 'hasil') {
+        // Jika jalur SNBT mencoba masuk ke halaman hasil tapi belum simulasi UTBK
+        if (jalurSekarang === "SNBT") {
+            const skorUtbkSekarang = document.getElementById('display-skor-utbk')?.innerText;
+            if (!skorUtbkSekarang || skorUtbkSekarang === "---") {
+                showToast("Akses Ditolak! Selesaikan simulasi UTBK Anda terlebih dahulu untuk melihat hasil.", "error");
+                return; // Kunci halaman hasil sebelum simulasi selesai
+            }
+        }
+    }
+    // -----------------------------------------------------------------
+
+    // Eksekusi perpindahan halaman/tab UI
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+    const targetTab = document.getElementById('tab-' + tabName);
+    if (targetTab) targetTab.classList.remove('hidden');
+
+    // Update gaya visual stepper / langkah di atas halaman
+    ['profil', 'prodi', 'utbk', 'hasil'].forEach(t => {
+        const elStep = document.getElementById(`step-${t}`);
+        if (elStep) elStep.className = "flex items-center space-x-1.5 text-slate-400";
+    });
+    const activeStep = document.getElementById(`step-${tabName}`);
+    if (activeStep) activeStep.className = "flex items-center space-x-1.5 text-blue-600";
+
+    // Update gaya visual menu navigasi bawah/samping
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('text-blue-600');
+        item.classList.add('text-slate-400');
+        const spanText = item.querySelector('span');
+        if (spanText) spanText.classList.replace('font-bold', 'font-medium');
+    });
+
+    const activeBtn = document.getElementById('btn-' + tabName);
+    if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400');
+        activeBtn.classList.add('text-blue-600');
+        const activeSpan = activeBtn.querySelector('span');
+        if (activeSpan) activeSpan.classList.replace('font-medium', 'font-bold');
+    }
+
+    addLog(`Berpindah ke halaman: ${tabName.toUpperCase()}`, 'system');
+}
+
+function prosesDanLihatHasil() {
+    // 1. Hitung kelulusan berdasarkan nilai UTBK yang baru didapat
+    if (typeof prosesKelulusanNasional === "function") {
+        prosesKelulusanNasional();
+    }
+
+    // 2. Alihkan halaman aktif ke tab 'hasil'
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+    const targetTab = document.getElementById('tab-hasil');
+    if (targetTab) targetTab.classList.remove('hidden');
+
+    // Update stepper ke 'hasil'
+    ['profil', 'prodi', 'utbk', 'hasil'].forEach(t => {
+        const elStep = document.getElementById(`step-${t}`);
+        if (elStep) elStep.className = "flex items-center space-x-1.5 text-slate-400";
+    });
+    const activeStep = document.getElementById('step-hasil');
+    if (activeStep) activeStep.className = "flex items-center space-x-1.5 text-blue-600";
+
+    // Update Navigasi Bawah ke posisi 'Hasil'
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('text-blue-600');
+        item.classList.add('text-slate-400');
+    });
+    const activeBtn = document.getElementById('btn-hasil');
+    if (activeBtn) activeBtn.classList.add('text-blue-600');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    addLog(`SNBT Berhasil Dikalkulasi. Berpindah ke halaman: HASIL`, 'success');
+}
+</script>
+</body>
+</html>
